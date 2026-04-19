@@ -16,8 +16,15 @@
                     <h1>ZP File Manager</h1>
                 </div>
                 <div class="fm-header-actions">
+                    <div class="fm-search">
+                        <i class="fa-solid fa-search"></i>
+                        <input type="text" id="searchInput" placeholder="Cerca file..." autocomplete="off">
+                    </div>
                     <button type="button" id="btnTheme" class="fm-btn-icon" title="Cambia tema">
                         <i class="fa-solid fa-moon" id="themeIcon"></i>
+                    </button>
+                    <button type="button" id="btnViewToggle" class="fm-btn-icon" title="Cambia vista">
+                        <i class="fa-solid fa-list" id="viewIcon"></i>
                     </button>
                     <button type="button" id="btnNewFolder" class="fm-btn fm-btn-primary">
                         <i class="fa-solid fa-folder-plus"></i>

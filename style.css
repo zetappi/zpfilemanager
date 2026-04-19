@@ -95,6 +95,42 @@ body[data-theme="light"] {
 .fm-header-actions {
     display: flex;
     gap: 10px;
+    align-items: center;
+}
+
+.fm-search {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 8px 14px;
+    background: var(--fm-bg-tertiary);
+    border: 1px solid var(--fm-border);
+    border-radius: var(--fm-radius-sm);
+    transition: var(--fm-transition);
+}
+
+.fm-search:focus-within {
+    border-color: var(--fm-accent);
+    box-shadow: 0 0 0 3px rgba(29, 155, 240, 0.1);
+}
+
+.fm-search i {
+    color: var(--fm-text-muted);
+    font-size: 0.9rem;
+}
+
+.fm-search input {
+    background: transparent;
+    border: none;
+    color: var(--fm-text-primary);
+    font-family: inherit;
+    font-size: 0.875rem;
+    width: 200px;
+    outline: none;
+}
+
+.fm-search input::placeholder {
+    color: var(--fm-text-muted);
 }
 
 .fm-btn {
@@ -329,6 +365,70 @@ body[data-theme="light"] {
 
 .fm-content {
     min-height: 300px;
+}
+
+.fm-content.grid-view {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+    gap: 16px;
+    padding: 20px 24px;
+}
+
+.fm-content.grid-view .fm-item {
+    flex-direction: column;
+    padding: 16px;
+    border: 1px solid var(--fm-border);
+    border-radius: var(--fm-radius-md);
+    text-align: center;
+}
+
+.fm-content.grid-view .fm-item:hover {
+    border-color: var(--fm-accent);
+    transform: translateY(-2px);
+}
+
+.fm-content.grid-view .fm-item.selected {
+    border-color: var(--fm-accent);
+    border-width: 2px;
+    padding: 15px;
+}
+
+.fm-content.grid-view .fm-item-checkbox {
+    position: absolute;
+    top: 8px;
+    left: 8px;
+}
+
+.fm-content.grid-view .fm-item-icon {
+    width: 60px;
+    height: 60px;
+    margin: 0 auto 12px;
+    font-size: 2rem;
+}
+
+.fm-content.grid-view .fm-item-name {
+    font-size: 0.875rem;
+    margin-bottom: 8px;
+}
+
+.fm-content.grid-view .fm-item-meta {
+    flex-direction: column;
+    gap: 4px;
+}
+
+.fm-content.grid-view .fm-item-actions {
+    position: absolute;
+    top: 8px;
+    right: 8px;
+    opacity: 0;
+}
+
+.fm-content.grid-view .fm-item:hover .fm-item-actions {
+    opacity: 1;
+}
+
+.fm-content.grid-view .fm-item {
+    position: relative;
 }
 
 .fm-loading,

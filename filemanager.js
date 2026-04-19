@@ -30,6 +30,8 @@
     let selectionCountEl;
     let currentItems = [];
     let csrfToken = '';
+    let viewMode = 'list'; // 'list' or 'grid'
+    let searchQuery = '';
 
     function getBaseUrl() {
         const scripts = document.getElementsByTagName('script');
@@ -225,8 +227,29 @@
         
         currentItems = data.items;
         
+        // Apply search filter
+        let filteredItems = data.items;
+        if (searchQuery.trim()) {
+            const query = searchQuery.toLowerCase();
+            filteredItems = data.items.filter(item => 
+                item.name.toLowerCase().includes(query)
+            );
+        }
+        
+        if (filteredItems.length === 0) {
+            fileList.innerHTML = '<div class="fm-empty"><i class="fa-solid fa-folder-open"></i><span>Nessun risultato</span></div>';
+            return;
+        }
+        
+        // Apply view mode
+        if (viewMode === 'grid') {
+            fileList.classList.add('grid-view');
+        } else {
+            fileList.classList.remove('grid-view');
+        }
+        
         let html = '';
-        data.items.forEach((item, index) => {
+        filteredItems.forEach((item, index) => {
             const iconClass = item.is_dir ? 'fa-folder' : getFileIconClass(item.name);
             const iconColor = item.is_dir ? '' : getFileIconColor(item.name);
             const size = item.size_fmt || item.size || '';
@@ -701,11 +724,52 @@
         setTheme(savedTheme);
     }
 
+    // View toggle functionality
+    function toggleViewMode() {
+        viewMode = viewMode === 'list' ? 'grid' : 'list';
+        const viewIcon = document.getElementById('viewIcon');
+        
+        if (viewMode === 'grid') {
+            viewIcon.className = 'fa-solid fa-th-large';
+            fileList.classList.add('grid-view');
+        } else {
+            viewIcon.className = 'fa-solid fa-list';
+            fileList.classList.remove('grid-view');
+        }
+        
+        localStorage.setItem('fm-view-mode', viewMode);
+        renderFileList({ items: currentItems });
+    }
+
+    const btnViewToggle = document.getElementById('btnViewToggle');
+    if (btnViewToggle) {
+        btnViewToggle.addEventListener('click', toggleViewMode);
+    }
+
+    // Load saved view mode
+    const savedViewMode = localStorage.getItem('fm-view-mode');
+    if (savedViewMode === 'grid') {
+        viewMode = 'grid';
+        const viewIcon = document.getElementById('viewIcon');
+        if (viewIcon) {
+            viewIcon.className = 'fa-solid fa-th-large';
+        }
+    }
+
+    // Search functionality
+    const searchInput = document.getElementById('searchInput');
+    if (searchInput) {
+        searchInput.addEventListener('input', (e) => {
+            searchQuery = e.target.value;
+            renderFileList({ items: currentItems });
+        });
+    }
+
     function goToPage(page) {
         loadDirectory(currentPath, page);
     }
 
-    fm.FM = { goToPage, loadDirectory, clearSelection };
+    fm.FM = { goToPage, loadDirectory, clearSelection, toggleViewMode };
 
     init();
 })();
