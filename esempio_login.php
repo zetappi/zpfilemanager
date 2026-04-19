@@ -14,11 +14,13 @@
 // ============================================================
 // CONFIGURAZIONE DATABASE - DA MODIFICARE
 // ============================================================
+// È consigliabile usare variabili d'ambiente invece di hardcoded credentials
+// Esempio: putenv('DB_HOST=localhost'); nel file di configurazione principale
 
-define('DB_HOST', 'localhost');           // Host del database
-define('DB_NAME', 'nome_database');       // Nome del database
-define('DB_USER', 'username');            // Username database
-define('DB_PASS', 'password');            // Password database
+define('DB_HOST', getenv('DB_HOST') ?: 'localhost');           // Host del database
+define('DB_NAME', getenv('DB_NAME') ?: 'nome_database');       // Nome del database
+define('DB_USER', getenv('DB_USER') ?: 'username');            // Username database
+define('DB_PASS', getenv('DB_PASS') ?: 'password');            // Password database
 define('DB_CHARSET', 'utf8mb4');          // Charset
 
 // ============================================================

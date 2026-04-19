@@ -1,19 +1,77 @@
 <?php
+// Load configuration
+require_once __DIR__ . '/config.php';
+require_once __DIR__ . '/FileManagerHelper.php';
+
 header('Content-Type: application/json; charset=utf-8');
-// CORS handling – allow only whitelisted origins
-$allowedOrigins = ['https://example.com', 'https://myapp.it']; // TODO: adjust as needed
+
+// CORS handling based on configuration
+$allowedOrigins = defined('FM_CORS_ALLOWED_ORIGINS') ? FM_CORS_ALLOWED_ORIGINS : [];
 $origin = $_SERVER['HTTP_ORIGIN'] ?? '';
-if (in_array($origin, $allowedOrigins)) {
+
+if (in_array('*', $allowedOrigins)) {
+    header('Access-Control-Allow-Origin: *');
+} elseif (in_array($origin, $allowedOrigins)) {
     header('Access-Control-Allow-Origin: ' . $origin);
 }
+
 header('Access-Control-Allow-Methods: GET, POST');
-header('Access-Control-Allow-Headers: Content-Type');
+header('Access-Control-Allow-Headers: Content-Type, X-CSRF-Token');
+
+if (defined('FM_CORS_ALLOW_CREDENTIALS') && FM_CORS_ALLOW_CREDENTIALS) {
+    header('Access-Control-Allow-Credentials: true');
+}
+
 require_once __DIR__.'/auth.php';
-// Simple rate limiting: max 30 requests per minute per IP (stored in session)
-if (!isset($_SESSION['rl'])) { $_SESSION['rl'] = ['count'=>0,'start'=>time()]; }
-if (time() - $_SESSION['rl']['start'] > 60) { $_SESSION['rl']['count']=0; $_SESSION['rl']['start']=time(); }
-if ($_SESSION['rl']['count'] >= 30) { http_response_code(429); echo json_encode(['success'=>false,'error'=>'Too many requests']); exit; }
-$_SESSION['rl']['count']++;
+
+// Rate limiting based on configuration
+$ip = $_SERVER['REMOTE_ADDR'] ?? 'unknown';
+$rateLimit = defined('FM_RATE_LIMIT') ? FM_RATE_LIMIT : 30;
+$rateLimitWindow = defined('FM_RATE_LIMIT_WINDOW') ? FM_RATE_LIMIT_WINDOW : 60;
+$rateLimitFile = __DIR__ . '/logs/ratelimit_' . md5($ip) . '.json';
+$currentTime = time();
+$rateLimitData = [];
+
+if (file_exists($rateLimitFile)) {
+    $rateLimitData = json_decode(@file_get_contents($rateLimitFile), true) ?: [];
+}
+
+// Reset if older than window
+if (!isset($rateLimitData['start']) || ($currentTime - $rateLimitData['start'] > $rateLimitWindow)) {
+    $rateLimitData = ['count' => 0, 'start' => $currentTime];
+}
+
+if ($rateLimitData['count'] >= $rateLimit) {
+    http_response_code(429);
+    echo json_encode(['success'=>false,'error'=>'Too many requests']);
+    exit;
+}
+
+$rateLimitData['count']++;
+@file_put_contents($rateLimitFile, json_encode($rateLimitData));
+
+// CSRF Protection: generate and validate token for POST requests
+$enableCsrf = defined('FM_ENABLE_CSRF') ? FM_ENABLE_CSRF : true;
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && $enableCsrf) {
+    if (!isset($_SESSION['csrf_token'])) {
+        try {
+            $_SESSION['csrf_token'] = bin2hex(random_bytes(32));
+        } catch (Exception $e) {
+            error_log('CSRF token generation failed: ' . $e->getMessage());
+            http_response_code(500);
+            echo json_encode(['success' => false, 'error' => 'Server configuration error']);
+            exit;
+        }
+    }
+    
+    $providedToken = $_POST['csrf_token'] ?? $_SERVER['HTTP_X_CSRF_TOKEN'] ?? '';
+    
+    if (!hash_equals($_SESSION['csrf_token'], $providedToken)) {
+        http_response_code(403);
+        echo json_encode(['success' => false, 'error' => 'CSRF token validation failed']);
+        exit;
+    }
+}
 
 
 $scriptDir = dirname(__FILE__);
@@ -25,15 +83,20 @@ if (isset($_GET['base_path']) && $_GET['base_path'] !== '') {
     $inputBase = $_POST['base_path'];
 }
 
-$defaultBase = $scriptDir . '/uploads';
-if (!is_dir($defaultBase)) {
-    @mkdir($defaultBase, 0755, true);
+$defaultBase = defined('FM_DEFAULT_BASE_PATH') ? FM_DEFAULT_BASE_PATH : $scriptDir . '/uploads';
+$allowedBaseDir = defined('FM_ALLOWED_BASE_DIR') ? FM_ALLOWED_BASE_DIR : $scriptDir . '/uploads';
+
+// Ensure default base directory exists
+if (!FileManagerHelper::ensureDirectory($defaultBase, defined('FM_DIR_PERMISSIONS') ? FM_DIR_PERMISSIONS : 0755)) {
+    http_response_code(500);
+    echo json_encode(['success' => false, 'error' => 'Impossibile creare directory base']);
+    exit;
 }
 
 $basePath = $inputBase !== null ? rtrim($inputBase, '/\\') : $defaultBase;
 // Normalize and ensure base path stays within allowed directory
 $basePathReal = realpath($basePath);
-if ($basePathReal === false || strpos(str_replace('\\','/', $basePathReal), str_replace('\\','/', $scriptDir . '/uploads')) !== 0) {
+if ($basePathReal === false || !FileManagerHelper::isPathWithinBase($basePathReal, $allowedBaseDir)) {
     http_response_code(400);
     echo json_encode(['success' => false, 'error' => 'Base path non consentito']);
     exit;
@@ -45,7 +108,7 @@ $currentPathPost = isset($_POST['path']) ? $_POST['path'] : '';
 $currentPath = $currentPathGet !== '' ? $currentPathGet : $currentPathPost;
 $currentPath = trim($currentPath, '/\\');
 
-if (strpos($currentPath, '..') !== false) {
+if (!FileManagerHelper::isPathSafe($currentPath)) {
     http_response_code(403);
     echo json_encode(['success' => false, 'error' => 'Accesso negato']);
     exit;
@@ -64,59 +127,61 @@ if ($basePathReal === false) {
 }
 
 if ($basePathReal !== false && $fullPathReal !== false) {
-    $fullPathReal = str_replace('\\', '/', $fullPathReal);
-    $basePathReal = str_replace('\\', '/', $basePathReal);
-    if (strpos($fullPathReal, $basePathReal) !== 0) {
+    if (!FileManagerHelper::isPathWithinBase($fullPathReal, $basePathReal)) {
         http_response_code(403);
         echo json_encode(['success' => false, 'error' => 'Accesso negato: fuori dalla directory base']);
         exit;
     }
 }
 
-function relPath($full, $base) {
-    $full = str_replace('\\', '/', $full);
-    $base = str_replace('\\', '/', $base);
-    if (strpos($full, $base) === 0) {
-        return ltrim(substr($full, strlen($base)), '/');
-    }
-    return $full;
-}
-
-function fmtSize($bytes) {
-    if ($bytes >= 1073741824) return number_format($bytes / 1073741824, 2) . ' GB';
-    if ($bytes >= 1048576) return number_format($bytes / 1048576, 2) . ' MB';
-    if ($bytes >= 1024) return number_format($bytes / 1024, 2) . ' KB';
-    return $bytes . ' B';
-}
-
 $action = $_GET['action'] ?? $_POST['action'] ?? '';
 
 switch ($action) {
+    case 'get_csrf_token':
+        if (!isset($_SESSION['csrf_token'])) {
+            $_SESSION['csrf_token'] = bin2hex(random_bytes(32));
+        }
+        echo json_encode(['success' => true, 'csrf_token' => $_SESSION['csrf_token']]);
+        break;
     case 'list':
             // Log action
-            $logLine = sprintf("%s | LIST | %s | %s\n", date('Y-m-d H:i:s'), $currentPath, $_SERVER['REMOTE_ADDR'] ?? '');
-            file_put_contents(__DIR__ . '/logs/filemanager.log', $logLine, FILE_APPEND);
+            if (defined('FM_ENABLE_LOGGING') && FM_ENABLE_LOGGING) {
+                $logFile = defined('FM_LOG_FILE') ? FM_LOG_FILE : __DIR__ . '/logs/filemanager.log';
+                $safePath = FileManagerHelper::sanitizeLog($currentPath);
+                $safeIp = FileManagerHelper::sanitizeLog($_SERVER['REMOTE_ADDR'] ?? '');
+                $logLine = sprintf("%s | LIST | %s | %s", date('Y-m-d H:i:s'), $safePath, $safeIp);
+                FileManagerHelper::log($logLine, $logFile);
+            }
         $items = [];
         $listPath = $fullPathReal ?: $fullPath;
         $sortBy = isset($_GET['sort_by']) ? $_GET['sort_by'] : 'name';
         $sortOrder = isset($_GET['sort_order']) ? strtolower($_GET['sort_order']) : 'asc';
         $page = isset($_GET['page']) ? max(1, intval($_GET['page'])) : 1;
-        $perPage = isset($_GET['per_page']) ? max(1, intval($_GET['per_page'])) : 10;
+        $perPage = isset($_GET['per_page']) ? max(1, intval($_GET['per_page'])) : (defined('FM_ITEMS_PER_PAGE') ? FM_ITEMS_PER_PAGE : 10);
+        $maxPerPage = defined('FM_MAX_ITEMS_PER_PAGE') ? FM_MAX_ITEMS_PER_PAGE : 100;
+        $perPage = min($perPage, $maxPerPage);
+        
+        $showHidden = defined('FM_SHOW_HIDDEN_FILES') ? FM_SHOW_HIDDEN_FILES : false;
         
         if (is_dir($listPath)) {
-            $entries = scandir($listPath);
+            $entries = @scandir($listPath);
+            if ($entries === false) {
+                echo json_encode(['success' => false, 'error' => 'Impossibile leggere directory']);
+                break;
+            }
             foreach ($entries as $entry) {
                 if ($entry === '.' || $entry === '..') continue;
+                if (!$showHidden && strpos($entry, '.') === 0) continue;
                 
                 $itemPath = $listPath . '/' . $entry;
                 $isDir = is_dir($itemPath);
                 
                 $items[] = [
                     'name' => $entry,
-                    'path' => relPath($itemPath, $basePathReal ?: $basePath),
+                    'path' => FileManagerHelper::relativePath($itemPath, $basePathReal ?: $basePath),
                     'is_dir' => $isDir,
                     'size' => $isDir ? null : filesize($itemPath),
-                    'size_fmt' => $isDir ? null : fmtSize(filesize($itemPath)),
+                    'size_fmt' => $isDir ? null : FileManagerHelper::formatSize(filesize($itemPath)),
                     'modified' => filemtime($itemPath),
                     'modified_fmt' => date('d/m/Y H:i', filemtime($itemPath))
                 ];
@@ -130,7 +195,7 @@ switch ($action) {
             $cmp = 0;
             switch ($sortBy) {
                 case 'size':
-                    $cmp = $a['size'] - $b['size'];
+                    $cmp = ($a['size'] ?? 0) - ($b['size'] ?? 0);
                     break;
                 case 'modified':
                     $cmp = $a['modified'] - $b['modified'];
@@ -149,7 +214,7 @@ switch ($action) {
         
         echo json_encode([
             'success' => true,
-            'path' => relPath($fullPathReal ?: $fullPath, $basePathReal ?: $basePath),
+            'path' => FileManagerHelper::relativePath($fullPathReal ?: $fullPath, $basePathReal ?: $basePath),
             'full_base_path' => $basePathReal ?: $basePath,
             'items' => $paginatedItems,
             'pagination' => [
@@ -163,8 +228,13 @@ switch ($action) {
 
     case 'create_folder':
             // Log action
-            $logLine = sprintf("%s | CREATE_FOLDER | %s | %s\n", date('Y-m-d H:i:s'), $currentPath, $_SERVER['REMOTE_ADDR'] ?? '');
-            file_put_contents(__DIR__ . '/logs/filemanager.log', $logLine, FILE_APPEND);
+            if (defined('FM_ENABLE_LOGGING') && FM_ENABLE_LOGGING) {
+                $logFile = defined('FM_LOG_FILE') ? FM_LOG_FILE : __DIR__ . '/logs/filemanager.log';
+                $safePath = FileManagerHelper::sanitizeLog($currentPath);
+                $safeIp = FileManagerHelper::sanitizeLog($_SERVER['REMOTE_ADDR'] ?? '');
+                $logLine = sprintf("%s | CREATE_FOLDER | %s | %s", date('Y-m-d H:i:s'), $safePath, $safeIp);
+                FileManagerHelper::log($logLine, $logFile);
+            }
         $name = isset($_POST['name']) ? trim($_POST['name']) : '';
         
         if (empty($name) || preg_match('/[\/\\\\:*?"<>|]/', $name)) {
@@ -179,12 +249,13 @@ switch ($action) {
             exit;
         }
         
-        if (mkdir($newPath, 0750, false)) {
+        $dirPerms = defined('FM_DIR_PERMISSIONS') ? FM_DIR_PERMISSIONS : 0750;
+        if (@mkdir($newPath, $dirPerms, false)) {
             echo json_encode([
                 'success' => true,
                 'item' => [
                     'name' => $name,
-                    'path' => relPath($newPath, $basePathReal ?: $basePath),
+                    'path' => FileManagerHelper::relativePath($newPath, $basePathReal ?: $basePath),
                     'is_dir' => true,
                     'size' => null,
                     'modified' => date('d/m/Y H:i')
@@ -197,8 +268,13 @@ switch ($action) {
 
     case 'delete':
             // Log action
-            $logLine = sprintf("%s | DELETE | %s | %s\n", date('Y-m-d H:i:s'), $path ?? '', $_SERVER['REMOTE_ADDR'] ?? '');
-            file_put_contents(__DIR__ . '/logs/filemanager.log', $logLine, FILE_APPEND);
+            if (defined('FM_ENABLE_LOGGING') && FM_ENABLE_LOGGING) {
+                $logFile = defined('FM_LOG_FILE') ? FM_LOG_FILE : __DIR__ . '/logs/filemanager.log';
+                $safePath = FileManagerHelper::sanitizeLog($path ?? '');
+                $safeIp = FileManagerHelper::sanitizeLog($_SERVER['REMOTE_ADDR'] ?? '');
+                $logLine = sprintf("%s | DELETE | %s | %s", date('Y-m-d H:i:s'), $safePath, $safeIp);
+                FileManagerHelper::log($logLine, $logFile);
+            }
         $path = isset($_POST['path']) ? trim($_POST['path'], '/\\') : '';
         
         if (empty($path)) {
@@ -214,24 +290,21 @@ switch ($action) {
         }
         
         $base = $basePathReal ?: $basePath;
-        if (strpos(str_replace('\\', '/', $targetReal), str_replace('\\', '/', $base)) !== 0) {
+        if (!FileManagerHelper::isPathWithinBase($targetReal, $base)) {
             echo json_encode(['success' => false, 'error' => 'Accesso negato']);
             exit;
         }
         
-        function delRecursive($p) {
-            if (is_dir($p)) {
-                $items = scandir($p);
-                foreach ($items as $item) {
-                    if ($item === '.' || $item === '..') continue;
-                    delRecursive($p . '/' . $item);
-                }
-                return rmdir($p);
+        $allowDeleteNonEmpty = defined('FM_ALLOW_DELETE_NON_EMPTY') ? FM_ALLOW_DELETE_NON_EMPTY : true;
+        if (!$allowDeleteNonEmpty && is_dir($targetReal)) {
+            $items = @scandir($targetReal);
+            if ($items && count($items) > 2) { // . and .. always present
+                echo json_encode(['success' => false, 'error' => 'Eliminazione directory non vuote non permessa']);
+                exit;
             }
-            return unlink($p);
         }
         
-        if (delRecursive($targetReal)) {
+        if (FileManagerHelper::deleteRecursive($targetReal)) {
             echo json_encode(['success' => true]);
         } else {
             echo json_encode(['success' => false, 'error' => 'Errore eliminazione. Verifica i permessi.']);
@@ -240,8 +313,14 @@ switch ($action) {
 
     case 'rename':
             // Log action
-            $logLine = sprintf("%s | RENAME | %s -> %s | %s\n", date('Y-m-d H:i:s'), $path ?? '', $newName ?? '', $_SERVER['REMOTE_ADDR'] ?? '');
-            file_put_contents(__DIR__ . '/logs/filemanager.log', $logLine, FILE_APPEND);
+            if (defined('FM_ENABLE_LOGGING') && FM_ENABLE_LOGGING) {
+                $logFile = defined('FM_LOG_FILE') ? FM_LOG_FILE : __DIR__ . '/logs/filemanager.log';
+                $safePath = FileManagerHelper::sanitizeLog($path ?? '');
+                $safeNewName = FileManagerHelper::sanitizeLog($newName ?? '');
+                $safeIp = FileManagerHelper::sanitizeLog($_SERVER['REMOTE_ADDR'] ?? '');
+                $logLine = sprintf("%s | RENAME | %s -> %s | %s", date('Y-m-d H:i:s'), $safePath, $safeNewName, $safeIp);
+                FileManagerHelper::log($logLine, $logFile);
+            }
         $path = isset($_POST['path']) ? trim($_POST['path'], '/\\') : '';
         $newName = isset($_POST['new_name']) ? trim($_POST['new_name']) : '';
         
@@ -263,7 +342,7 @@ switch ($action) {
         }
         
         $base = $basePathReal ?: $basePath;
-        if (strpos(str_replace('\\', '/', $targetReal), str_replace('\\', '/', $base)) !== 0) {
+        if (!FileManagerHelper::isPathWithinBase($targetReal, $base)) {
             echo json_encode(['success' => false, 'error' => 'Accesso negato']);
             exit;
         }
@@ -276,7 +355,7 @@ switch ($action) {
             exit;
         }
         
-        if (rename($targetReal, $newPath)) {
+        if (@rename($targetReal, $newPath)) {
             echo json_encode(['success' => true]);
         } else {
             echo json_encode(['success' => false, 'error' => 'Errore rinomina. Verifica i permessi.']);
@@ -284,9 +363,14 @@ switch ($action) {
         break;
 
     case 'upload':
-            // Log action start (will log each uploaded file later)
-            $logStart = sprintf("%s | UPLOAD_START | %s | %s\n", date('Y-m-d H:i:s'), $currentPath, $_SERVER['REMOTE_ADDR'] ?? '');
-            file_put_contents(__DIR__ . '/logs/filemanager.log', $logStart, FILE_APPEND);
+            // Log action start
+            if (defined('FM_ENABLE_LOGGING') && FM_ENABLE_LOGGING) {
+                $logFile = defined('FM_LOG_FILE') ? FM_LOG_FILE : __DIR__ . '/logs/filemanager.log';
+                $safePath = FileManagerHelper::sanitizeLog($currentPath);
+                $safeIp = FileManagerHelper::sanitizeLog($_SERVER['REMOTE_ADDR'] ?? '');
+                $logStart = sprintf("%s | UPLOAD_START | %s | %s", date('Y-m-d H:i:s'), $safePath, $safeIp);
+                FileManagerHelper::log($logStart, $logFile);
+            }
         if (empty($_FILES) || !isset($_FILES['files'])) {
             echo json_encode(['success' => false, 'error' => 'Nessun file caricato']);
             exit;
@@ -301,6 +385,11 @@ switch ($action) {
             exit;
         }
         
+        $allowedExtensions = defined('FM_ALLOWED_EXTENSIONS') ? FM_ALLOWED_EXTENSIONS : [];
+        $maxFileSize = defined('FM_MAX_FILE_SIZE') ? FM_MAX_FILE_SIZE : 0;
+        $filePerms = defined('FM_FILE_PERMISSIONS') ? FM_FILE_PERMISSIONS : 0640;
+        $autoRename = defined('FM_AUTO_RENAME_ON_CONFLICT') ? FM_AUTO_RENAME_ON_CONFLICT : true;
+        
         $files = $_FILES['files'];
         $count = is_array($files['name']) ? count($files['name']) : 1;
         
@@ -314,42 +403,39 @@ switch ($action) {
                 continue;
             }
             
-            $safeName = preg_replace('/[\/\\\\:*?"<>|]/', '_', basename($name));
+            // Check file size
+            if ($maxFileSize > 0 && filesize($tmpName) > $maxFileSize) {
+                $errors[] = $name . ': file troppo grande (max ' . FileManagerHelper::formatSize($maxFileSize) . ')';
+                continue;
+            }
+            
+            $safeName = FileManagerHelper::sanitizeFilenameForStorage($name);
+            
             // Validate file extension against whitelist
-            $allowedExtensions = ['jpg','jpeg','png','pdf','doc','docx','txt'];
-            $ext = strtolower(pathinfo($name, PATHINFO_EXTENSION));
-            if (!in_array($ext, $allowedExtensions)) {
+            if (!FileManagerHelper::isExtensionAllowed($name, $allowedExtensions)) {
                 $errors[] = $name . ': tipo di file non consentito';
                 continue;
             }
-            $targetFile = $targetDir . '/' . $safeName;
             
-            $c = 1;
-            $baseName = pathinfo($safeName, PATHINFO_FILENAME);
-            $ext = pathinfo($safeName, PATHINFO_EXTENSION);
-            
-            while (file_exists($targetFile)) {
-                $newName = $baseName . '_' . $c . ($ext ? '.' . $ext : '');
-                $targetFile = $targetDir . '/' . $newName;
-                $c++;
+            // Generate unique filename if enabled
+            if ($autoRename) {
+                $safeName = FileManagerHelper::generateUniqueFilename($targetDir, $safeName);
             }
+            
+            $targetFile = $targetDir . '/' . $safeName;
             
             $success = false;
             
             if (is_uploaded_file($tmpName)) {
-                $success = move_uploaded_file($tmpName, $targetFile);
-            }
-            
-            if (!$success) {
-                $success = copy($tmpName, $targetFile);
+                $success = @move_uploaded_file($tmpName, $targetFile);
             }
             
             if ($success) {
-                chmod($targetFile, 0640);
+                @chmod($targetFile, $filePerms);
                 $uploaded[] = [
                     'name' => basename($targetFile),
-                    'path' => relPath($targetFile, $basePathReal ?: $basePath),
-                    'size' => fmtSize(filesize($targetFile))
+                    'path' => FileManagerHelper::relativePath($targetFile, $basePathReal ?: $basePath),
+                    'size' => FileManagerHelper::formatSize(filesize($targetFile))
                 ];
             } else {
                 $errors[] = $name . ': impossibile salvare il file';
@@ -365,8 +451,13 @@ switch ($action) {
 
     case 'download':
             // Log download action
-            $logLine = sprintf("%s | DOWNLOAD | %s | %s\n", date('Y-m-d H:i:s'), $path ?? '', $_SERVER['REMOTE_ADDR'] ?? '');
-            file_put_contents(__DIR__ . '/logs/filemanager.log', $logLine, FILE_APPEND);
+            if (defined('FM_ENABLE_LOGGING') && FM_ENABLE_LOGGING) {
+                $logFile = defined('FM_LOG_FILE') ? FM_LOG_FILE : __DIR__ . '/logs/filemanager.log';
+                $safePath = FileManagerHelper::sanitizeLog($path ?? '');
+                $safeIp = FileManagerHelper::sanitizeLog($_SERVER['REMOTE_ADDR'] ?? '');
+                $logLine = sprintf("%s | DOWNLOAD | %s | %s", date('Y-m-d H:i:s'), $safePath, $safeIp);
+                FileManagerHelper::log($logLine, $logFile);
+            }
         $path = isset($_GET['path']) ? trim($_GET['path'], '/\\') : '';
         
         if (empty($path)) {
@@ -400,31 +491,16 @@ switch ($action) {
         }
         
         $filename = basename($targetReal);
+        $filename = FileManagerHelper::sanitizeFilename($filename);
         $filesize = filesize($targetReal);
-        $mimetype = 'application/octet-stream';
-        
-        $ext = strtolower(pathinfo($filename, PATHINFO_EXTENSION));
-        $mimeTypes = [
-            'pdf' => 'application/pdf',
-            'jpg' => 'image/jpeg', 'jpeg' => 'image/jpeg', 'png' => 'image/png',
-            'gif' => 'image/gif', 'svg' => 'image/svg+xml', 'webp' => 'image/webp',
-            'txt' => 'text/plain', 'html' => 'text/html', 'css' => 'text/css', 'js' => 'application/javascript',
-            'json' => 'application/json', 'xml' => 'application/xml',
-            'zip' => 'application/zip', 'rar' => 'application/vnd.rar',
-            'doc' => 'application/msword', 'docx' => 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
-            'xls' => 'application/vnd.ms-excel', 'xlsx' => 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
-            'mp3' => 'audio/mpeg', 'mp4' => 'video/mp4',
-        ];
-        if (isset($mimeTypes[$ext])) {
-            $mimetype = $mimeTypes[$ext];
-        }
+        $mimetype = FileManagerHelper::getMimeType($filename);
         
         header('Content-Type: ' . $mimetype);
         header('Content-Disposition: attachment; filename="' . $filename . '"');
         header('Content-Length: ' . $filesize);
         header('Cache-Control: no-cache');
         
-        readfile($targetReal);
+        @readfile($targetReal);
         exit;
 
     default:

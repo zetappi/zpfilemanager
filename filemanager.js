@@ -29,6 +29,7 @@
     let toolbarEl;
     let selectionCountEl;
     let currentItems = [];
+    let csrfToken = '';
 
     function getBaseUrl() {
         const scripts = document.getElementsByTagName('script');
@@ -47,6 +48,16 @@
             
             if (!(data instanceof FormData)) {
                 xhr.setRequestHeader('Content-Type', 'application/x-www-form-urlencoded');
+            }
+            
+            // Add CSRF token to POST requests
+            if (method === 'POST') {
+                if (data instanceof FormData) {
+                    data.append('csrf_token', csrfToken);
+                } else {
+                    data.csrf_token = csrfToken;
+                }
+                xhr.setRequestHeader('X-CSRF-Token', csrfToken);
             }
             
             xhr.onload = function() {
@@ -103,9 +114,23 @@
         });
     }
 
+    async function getCsrfToken() {
+        try {
+            const response = await ajax(getBaseUrl(), { action: 'get_csrf_token' });
+            if (response.success && response.csrf_token) {
+                csrfToken = response.csrf_token;
+            }
+        } catch (e) {
+            console.error('Failed to get CSRF token:', e);
+        }
+    }
+
     async function init() {
         toolbarEl = document.getElementById('toolbar');
         selectionCountEl = document.getElementById('selectionCount');
+        
+        // Get CSRF token first
+        await getCsrfToken();
         
         try {
             const response = await ajax(getBaseUrl(), { 
