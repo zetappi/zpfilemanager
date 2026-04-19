@@ -1,0 +1,25 @@
+# User uploads (ignore contents but keep directory)
+uploads/*
+!uploads/.gitkeep
+
+# Log files (ignore contents but keep directory)
+logs/*
+!logs/.gitkeep
+
+# Local configuration overrides
+config.local.php
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Editor files
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# Temporary files
+*.tmp
+*.temp
