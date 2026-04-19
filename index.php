@@ -82,6 +82,10 @@ setcookie('fm_lang', $lang, time() + (30 * 24 * 60 * 60), '/');
 
             <div class="fm-toolbar" id="toolbar">
                 <div class="fm-toolbar-left">
+                    <label class="fm-select-all">
+                        <input type="checkbox" id="selectAllCheckbox">
+                        <span><?php echo Language::get('selection_all'); ?></span>
+                    </label>
                     <span class="fm-selection-count">
                         <i class="fa-solid fa-check-square"></i>
                         <span id="selectionCount">0</span> <?php echo Language::get('selection_count', ['count' => 0]); ?>

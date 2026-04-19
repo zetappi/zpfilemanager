@@ -261,16 +261,29 @@ body[data-theme="light"] {
 .fm-toolbar-left {
     display: flex;
     align-items: center;
-    gap: 12px;
+    gap: 15px;
+}
+
+.fm-select-all {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    cursor: pointer;
+    font-size: 0.9rem;
+    color: var(--fm-text);
+    user-select: none;
+}
+
+.fm-select-all input[type="checkbox"] {
+    cursor: pointer;
 }
 
 .fm-selection-count {
     display: flex;
     align-items: center;
-    gap: 8px;
-    font-size: 0.875rem;
-    font-weight: 500;
-    color: var(--fm-accent);
+    gap: 5px;
+    color: var(--fm-text-muted);
+    font-size: 0.85rem;
 }
 
 .fm-toolbar-right {
