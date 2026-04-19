@@ -124,19 +124,20 @@ $fullPath = $currentPath !== '' ? $basePath . '/' . $currentPath : $basePath;
 $fullPathReal = realpath($fullPath);
 $basePathReal = realpath($basePath);
 
-if ($fullPathReal === false) {
-    $fullPathReal = $fullPath;
-}
 if ($basePathReal === false) {
-    $basePathReal = $basePath;
+    http_response_code(500);
+    echo json_encode(['success' => false, 'error' => Language::get('msg_folder_error')]);
+    exit;
 }
 
-if ($basePathReal !== false && $fullPathReal !== false) {
-    if (!FileManagerHelper::isPathWithinBase($fullPathReal, $basePathReal)) {
-        http_response_code(403);
-        echo json_encode(['success' => false, 'error' => Language::get('msg_access_denied') . ': fuori dalla directory base']);
-        exit;
-    }
+if ($fullPathReal === false) {
+    // Directory doesn't exist, but we'll handle this per action
+}
+
+if ($fullPathReal !== false && !FileManagerHelper::isPathWithinBase($fullPathReal, $basePathReal)) {
+    http_response_code(403);
+    echo json_encode(['success' => false, 'error' => Language::get('msg_access_denied')]);
+    exit;
 }
 
 $action = $_GET['action'] ?? $_POST['action'] ?? '';
@@ -220,7 +221,7 @@ switch ($action) {
         echo json_encode([
             'success' => true,
             'path' => FileManagerHelper::relativePath($fullPathReal ?: $fullPath, $basePathReal ?: $basePath),
-            'full_base_path' => $basePathReal ?: $basePath,
+            'full_base_path' => '', // Don't send absolute path, use relative for portability
             'items' => $paginatedItems,
             'pagination' => [
                 'page' => $page,

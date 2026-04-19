@@ -29,6 +29,7 @@ return [
     'modal_rename_name' => 'New name',
     'modal_confirm_title' => 'Confirm',
     'modal_confirm_message' => 'Are you sure you want to delete {item}?',
+    'modal_confirm_folder' => 'Are you sure you want to permanently delete the folder "{item}" with all its contents?',
     'modal_confirm_multiple' => 'Are you sure you want to delete {count} items?',
     
     // Messages

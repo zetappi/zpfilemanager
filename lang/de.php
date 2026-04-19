@@ -29,6 +29,7 @@ return [
     'modal_rename_name' => 'Neuer Name',
     'modal_confirm_title' => 'Bestätigen',
     'modal_confirm_message' => 'Sind Sie sicher, dass Sie {item} löschen möchten?',
+    'modal_confirm_folder' => 'Sind Sie sicher, dass Sie den Ordner "{item}" mit dem gesamten Inhalt endgültig löschen möchten?',
     'modal_confirm_multiple' => 'Sind Sie sicher, dass Sie {count} Elemente löschen möchten?',
     
     // Messages

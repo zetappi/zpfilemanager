@@ -29,6 +29,7 @@ return [
     'modal_rename_name' => 'Nouveau nom',
     'modal_confirm_title' => 'Confirmer',
     'modal_confirm_message' => 'Êtes-vous sûr de vouloir supprimer {item} ?',
+    'modal_confirm_folder' => 'Êtes-vous sûr de vouloir supprimer définitivement le dossier "{item}" avec tout son contenu ?',
     'modal_confirm_multiple' => 'Êtes-vous sûr de vouloir supprimer {count} éléments ?',
     
     // Messages

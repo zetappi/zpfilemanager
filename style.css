@@ -303,7 +303,7 @@ body[data-theme="light"] {
 .fm-breadcrumb {
     display: flex;
     align-items: center;
-    gap: 6px;
+    gap: 4px;
     font-family: 'SF Mono', Monaco, monospace;
     font-size: 0.875rem;
     color: var(--fm-text-secondary);
@@ -311,6 +311,44 @@ body[data-theme="light"] {
 
 .fm-breadcrumb i {
     color: var(--fm-text-muted);
+}
+
+.fm-breadcrumb-home {
+    color: var(--fm-primary) !important;
+    font-size: 1rem;
+    cursor: pointer;
+    transition: color 0.2s;
+}
+
+.fm-breadcrumb-home:hover {
+    color: var(--fm-primary-hover) !important;
+}
+
+.fm-breadcrumb-separator {
+    color: var(--fm-border);
+    font-size: 0.7rem;
+    margin: 0 2px;
+}
+
+.fm-breadcrumb-item {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    padding: 4px 8px;
+    border-radius: 4px;
+    cursor: pointer;
+    transition: all 0.2s;
+    color: var(--fm-text-secondary);
+}
+
+.fm-breadcrumb-item:hover {
+    background: var(--fm-bg-tertiary);
+    color: var(--fm-text);
+}
+
+.fm-breadcrumb-folder {
+    color: var(--fm-warning);
+    font-size: 0.85rem;
 }
 
 .fm-nav-spacer {

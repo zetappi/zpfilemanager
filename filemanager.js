@@ -45,12 +45,6 @@
     }
 
     function getBaseUrl() {
-        const scripts = document.getElementsByTagName('script');
-        for (let script of scripts) {
-            if (script.src.includes('filemanager.js')) {
-                return script.src.replace('/filemanager.js', '/api.php');
-            }
-        }
         return 'api.php';
     }
 
@@ -100,27 +94,30 @@
 
     function renderBreadcrumb(path) {
         if (!path) {
-            currentPathEl.innerHTML = '<i class="fa-solid fa-house"></i><span>/</span>';
+            currentPathEl.innerHTML = '<i class="fa-solid fa-house fm-breadcrumb-home"></i>';
+            currentPathEl.querySelector('.fm-breadcrumb-home').addEventListener('click', () => {
+                loadDirectory('');
+            });
             return;
         }
         
         const parts = path.split('/');
-        let html = '<i class="fa-solid fa-house"></i><span>/</span>';
+        let html = '<i class="fa-solid fa-house fm-breadcrumb-home"></i>';
         let accumulated = '';
         
         parts.forEach((part, i) => {
             accumulated += (i > 0 ? '/' : '') + part;
-            if (i === 0) {
-                html += `<span class="fm-breadcrumb-item" data-path="">${escapeHtml(part)}</span>`;
-            } else {
-                html += `<span class="fm-breadcrumb-sep">/</span><span class="fm-breadcrumb-item" data-path="${escapeHtml(accumulated)}">${escapeHtml(part)}</span>`;
-            }
+            html += `<i class="fa-solid fa-chevron-right fm-breadcrumb-separator"></i>`;
+            html += `<span class="fm-breadcrumb-item" data-path="${escapeHtml(accumulated)}"><i class="fa-solid fa-folder fm-breadcrumb-folder"></i>${escapeHtml(part)}</span>`;
         });
         
         currentPathEl.innerHTML = html;
         
+        currentPathEl.querySelector('.fm-breadcrumb-home').addEventListener('click', () => {
+            loadDirectory('');
+        });
+        
         currentPathEl.querySelectorAll('.fm-breadcrumb-item').forEach(item => {
-            item.style.cursor = 'pointer';
             item.addEventListener('click', () => {
                 loadDirectory(item.dataset.path);
             });
@@ -228,168 +225,6 @@
         html += `<span class="fm-page-info">${pagination.total_items} ${t('pagination_items')} - ${t('pagination_page')} ${pagination.page}/${pagination.total_pages}</span>`;
         
         paginationEl.innerHTML = html;
-    }
-
-    function renderFileList(data) {
-        if (!data.items || data.items.length === 0) {
-            fileList.innerHTML = '<div class="fm-empty"><i class="fa-solid fa-folder-open"></i><span>' + t('empty_folder') + '</span></div>';
-            return;
-        }
-        
-        currentItems = data.items;
-        
-        // Apply search filter
-        let filteredItems = data.items;
-        if (searchQuery.trim()) {
-            const query = searchQuery.toLowerCase();
-            filteredItems = data.items.filter(item => 
-                item.name.toLowerCase().includes(query)
-            );
-        }
-        
-        if (filteredItems.length === 0) {
-            fileList.innerHTML = '<div class="fm-empty"><i class="fa-solid fa-folder-open"></i><span>' + t('no_results') + '</span></div>';
-            return;
-        }
-        
-        // Apply view mode
-        if (viewMode === 'grid') {
-            fileList.classList.add('grid-view');
-        } else {
-            fileList.classList.remove('grid-view');
-        }
-        
-        let html = '';
-        filteredItems.forEach((item, index) => {
-            const iconClass = item.is_dir ? 'fa-folder' : getFileIconClass(item.name);
-            const iconColor = item.is_dir ? '' : getFileIconColor(item.name);
-            const size = item.size_fmt || item.size || '';
-            const modified = item.modified_fmt || item.modified || '';
-            const isSelected = selectedItems.has(item.path);
-            const downloadLink = !item.is_dir ? `api.php?action=download&path=${encodeURIComponent(item.path)}&base_path=${encodeURIComponent(rootPath)}` : '';
-            
-            html += `
-                <div class="fm-item ${isSelected ? 'selected' : ''}" data-path="${item.path}" data-is-dir="${item.is_dir}" data-index="${index}">
-                    <input type="checkbox" class="fm-item-checkbox" ${isSelected ? 'checked' : ''}>
-                    <div class="fm-item-icon ${item.is_dir ? 'folder' : 'file'}">
-                        <i class="fa-solid ${iconClass}" ${iconColor ? `style="color:${iconColor}"` : ''}></i>
-                    </div>
-                    <div class="fm-item-info">
-                        <div class="fm-item-name">${escapeHtml(item.name)}</div>
-                        <div class="fm-item-meta">
-                            <span><i class="fa-solid ${item.is_dir ? 'fa-folder' : 'fa-file-lines'}"></i> ${item.is_dir ? t('type_folder') : size}</span>
-                            <span><i class="fa-regular fa-clock"></i> ${modified}</span>
-                        </div>
-                    </div>
-                    ${downloadLink ? `<a href="${downloadLink}" class="fm-item-download" target="_blank" title="${t('btn_download')}"><i class="fa-solid fa-download"></i></a>` : ''}
-                    <div class="fm-item-actions">
-                        <button type="button" class="fm-item-action btn-rename" title="${t('btn_rename')}"><i class="fa-solid fa-pen"></i></button>
-                        <button type="button" class="fm-item-action btn-delete" title="${t('btn_delete')}"><i class="fa-solid fa-trash"></i></button>
-                    </div>
-                </div>
-            `;
-        });
-        
-        fileList.innerHTML = html;
-        attachItemListeners();
-        updateToolbar();
-    }
-
-    function getFileIconClass(filename) {
-        const ext = filename.split('.').pop().toLowerCase();
-        const icons = {
-            'jpg': 'fa-file-image', 'jpeg': 'fa-file-image', 'png': 'fa-file-image', 
-            'gif': 'fa-file-image', 'svg': 'fa-file-image', 'webp': 'fa-file-image',
-            'pdf': 'fa-file-pdf',
-            'doc': 'fa-file-word', 'docx': 'fa-file-word',
-            'xls': 'fa-file-excel', 'xlsx': 'fa-file-excel',
-            'zip': 'fa-file-zipper', 'rar': 'fa-file-zipper', '7z': 'fa-file-zipper', 
-            'tar': 'fa-file-zipper', 'gz': 'fa-file-zipper',
-            'mp3': 'fa-file-audio', 'wav': 'fa-file-audio', 'ogg': 'fa-file-audio',
-            'mp4': 'fa-file-video', 'avi': 'fa-file-video', 'mkv': 'fa-file-video', 'mov': 'fa-file-video',
-            'html': 'fa-file-code', 'css': 'fa-file-code', 'js': 'fa-file-code', 'json': 'fa-file-code',
-            'php': 'fa-file-code', 'py': 'fa-file-code', 'rb': 'fa-file-code', 'java': 'fa-file-code',
-            'txt': 'fa-file-lines', 'md': 'fa-file-lines', 'csv': 'fa-file-csv',
-            'css': 'fa-file-code', 'scss': 'fa-file-code', 'less': 'fa-file-code',
-        };
-        return icons[ext] || 'fa-file';
-    }
-
-    function getFileIconColor(filename) {
-        const ext = filename.split('.').pop().toLowerCase();
-        const colors = {
-            'jpg': '#e74c3c', 'jpeg': '#e74c3c', 'png': '#e74c3c', 
-            'gif': '#e74c3c', 'svg': '#e74c3c', 'webp': '#e74c3c',
-            'pdf': '#e74c3c',
-            'doc': '#2196F3', 'docx': '#2196F3',
-            'xls': '#4caf50', 'xlsx': '#4caf50',
-            'zip': '#ff9800', 'rar': '#ff9800', '7z': '#ff9800',
-            'mp3': '#9c27b0', 'wav': '#9c27b0',
-            'mp4': '#e91e63', 'avi': '#e91e63', 'mkv': '#e91e63',
-            'html': '#f16529', 'css': '#264de4', 'js': '#f7df1e',
-            'php': '#777bb4', 'py': '#3776ab',
-        };
-        return colors[ext] || '';
-    }
-
-    function escapeHtml(text) {
-        const div = document.createElement('div');
-        div.textContent = text;
-        return div.innerHTML;
-    }
-
-    function attachItemListeners() {
-        document.querySelectorAll('.fm-item').forEach(item => {
-            const path = item.dataset.path;
-            const isDir = item.dataset.isDir === 'true';
-            const checkbox = item.querySelector('.fm-item-checkbox');
-            
-            checkbox?.addEventListener('change', (e) => {
-                e.stopPropagation();
-                if (checkbox.checked) {
-                    selectedItems.add(path);
-                    item.classList.add('selected');
-                } else {
-                    selectedItems.delete(path);
-                    item.classList.remove('selected');
-                }
-                updateToolbar();
-            });
-            
-            item.querySelector('.fm-item-name')?.addEventListener('dblclick', () => {
-                if (isDir) {
-                    loadDirectory(path);
-                }
-            });
-            
-            item.addEventListener('click', (e) => {
-                if (e.target.closest('.btn-delete') || 
-                    e.target.closest('.btn-rename') || 
-                    e.target.closest('.fm-item-checkbox') ||
-                    e.target.closest('.fm-item-download') ||
-                    e.target.closest('.fm-item-name')) return;
-                if (isDir) {
-                    loadDirectory(path);
-                }
-            });
-            
-            item.querySelector('.btn-delete')?.addEventListener('click', (e) => {
-                e.stopPropagation();
-                const itemName = item.querySelector('.fm-item-name').textContent;
-                showConfirm(
-                    '<i class="fa-solid fa-trash"></i> ' + t('modal_confirm_title'),
-                    t('modal_confirm_message', {item: itemName}),
-                    async () => {
-                        await deleteItem(path, isDir);
-                    }
-                );
-            });
-            
-            item.querySelector('.btn-rename')?.addEventListener('click', (e) => {
-                e.stopPropagation();
-                renameItem(path, item.querySelector('.fm-item-name').textContent, isDir);
-            });
-        });
     }
 
     function updateToolbar() {
@@ -560,11 +395,17 @@
             item.querySelector('.btn-delete')?.addEventListener('click', (e) => {
                 e.stopPropagation();
                 const itemName = item.querySelector('.fm-item-name').textContent;
+                const message = isDir 
+                    ? t('modal_confirm_folder', {item: itemName})
+                    : t('modal_confirm_message', {item: itemName});
                 showConfirm(
                     '<i class="fa-solid fa-trash"></i> ' + t('modal_confirm_title'),
-                    t('modal_confirm_message', {item: itemName}),
+                    message,
                     async () => {
-                        await deleteItem(path, isDir);
+                        const success = await deleteItem(path, isDir);
+                        if (success) {
+                            loadDirectory(currentPath);
+                        }
                     }
                 );
             });

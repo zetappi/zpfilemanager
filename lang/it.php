@@ -29,6 +29,7 @@ return [
     'modal_rename_name' => 'Nuovo nome',
     'modal_confirm_title' => 'Conferma',
     'modal_confirm_message' => 'Sei sicuro di voler eliminare {item}?',
+    'modal_confirm_folder' => 'Sei sicuro di voler eliminare definitivamente la cartella "{item}" con tutto il suo contenuto?',
     'modal_confirm_multiple' => 'Sei sicuro di voler eliminare {count} elementi?',
     
     // Messages
