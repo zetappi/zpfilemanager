@@ -12,6 +12,7 @@
 8. [Sicurezza](#sicurezza)
 9. [Troubleshooting](#troubleshooting)
 10. [Best Practices](#best-practices)
+11. [Nuove Funzionalità](#nuove-funzionalità)
 
 ---
 
@@ -35,6 +36,9 @@ ZP File Manager è un modulo di file management leggero per PHP progettato per e
 - Error handling migliorato
 - Rate limiting basato su IP
 - CSRF protection configurabile
+- **Ricerca file in tempo reale**
+- **Vista griglia/lista toggle**
+- **Tema chiaro/scuro con persistenza**
 
 ### Requisiti di Sistema
 
@@ -51,19 +55,20 @@ ZP File Manager è un modulo di file management leggero per PHP progettato per e
 ### Struttura File
 
 ```
-zp-filemanager/
+filemanager/
 ├── index.php                    # UI principale
 ├── api.php                      # Backend API
 ├── config.php                   # Configurazione predefinita
 ├── config.local.example.php     # Esempio configurazione locale
 ├── FileManagerHelper.php        # Classe helper riutilizzabile
-├── auth.php                     # Autenticazione
+├── auth.php                     # Autenticazione (usa configurazione)
 ├── style.css                    # Stili CSS
 ├── filemanager.js               # Logica JavaScript
-├── uploads/                     # Directory upload (auto-creata)
-├── logs/                        # Directory log (auto-creata)
-├── test/                        # Test
-└── documentazione.md            # Questo file
+├── esempio_login.php            # Esempio integrazione database
+├── documentazione.md            # Documentazione completa
+├── README.md                    # Documentazione base
+├── uploads/                     # Directory upload (creata automaticamente)
+└── logs/                        # Directory log (creata automaticamente)
 ```
 
 ### Flusso Dati
@@ -873,7 +878,81 @@ Per problemi o domande:
 
 ---
 
+## Nuove Funzionalità
+
+### Ricerca File in Tempo Reale
+
+La barra di ricerca permette di filtrare i file e le cartelle in tempo reale senza dover ricaricare la pagina.
+
+**Funzionalità:**
+- Filtraggio case-insensitive
+- Ricerca su nomi file e cartelle
+- Feedback immediato durante digitazione
+- Messaggio "Nessun risultato" quando non ci sono match
+
+**Utilizzo:**
+- Digita nella barra ricerca nell'header
+- I risultati si aggiornano istantaneamente
+- Cancella per mostrare tutti i file
+
+### Vista Griglia/Lista Toggle
+
+Possibilità di cambiare tra vista lista (tradizionale) e vista griglia (card-based).
+
+**Vista Lista:**
+- Visualizzazione tradizionale a righe
+- Dettagli completi (nome, dimensione, data)
+- Ideale per directory con molti file
+
+**Vista Griglia:**
+- Visualizzazione a griglia con card
+- Icone più grandi
+- Migliore anteprima visuale
+- Ideale per immagini e directory con pochi elementi
+
+**Persistenza:**
+- La preferenza viene salvata in localStorage
+- Viene ripristinata al prossimo accesso
+
+**Utilizzo:**
+- Clicca sull'icona vista nell'header
+- L'icona cambia tra lista (fa-list) e griglia (fa-th-large)
+
+### Tema Chiaro/Scuro
+
+Il file manager supporta tema chiaro e scuro con persistenza delle preferenze.
+
+**Caratteristiche:**
+- Toggle istantaneo tra temi
+- Palette colori ottimizzata per entrambi i temi
+- Transizioni fluide
+- Persistenza in localStorage
+
+**Utilizzo:**
+- Clicca sull'icona luna/sole nell'header
+- Il tema viene salvato automaticamente
+
+---
+
 ## Changelog
+
+### Versione 2.1 (2026-04-19)
+
+**Nuove funzionalità:**
+- Ricerca file in tempo reale
+- Toggle vista griglia/lista
+- Tema chiaro/scuro con persistenza
+- Barra ricerca elegante con focus state
+
+**Miglioramenti estetici:**
+- CSS migliorato per vista griglia
+- Hover effects su card griglia
+- Animazioni fluide per transizioni vista
+
+**UX:**
+- Preferenze utente salvate in localStorage
+- Feedback visuale migliorato
+- Messaggi "Nessun risultato" per ricerca
 
 ### Versione 2.0 (2026-04-19)
 

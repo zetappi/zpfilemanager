@@ -133,6 +133,22 @@ define('FM_ALLOW_DELETE_NON_EMPTY', true);
 define('FM_SHOW_HIDDEN_FILES', false);
 
 // ============================================================================
+// LOCALIZATION CONFIGURATION
+// ============================================================================
+
+// Default language (en, it, or custom)
+// Default: en
+define('FM_DEFAULT_LANGUAGE', 'en');
+
+// Available languages
+// Default: ['en', 'it']
+define('FM_AVAILABLE_LANGUAGES', ['en', 'it', 'fr', 'de', 'es']);
+
+// Allow user to change language
+// Default: true
+define('FM_ALLOW_LANGUAGE_SWITCH', true);
+
+// ============================================================================
 // LOAD LOCAL CONFIGURATION OVERRIDES
 // ============================================================================
 

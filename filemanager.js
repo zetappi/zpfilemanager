@@ -32,6 +32,17 @@
     let csrfToken = '';
     let viewMode = 'list'; // 'list' or 'grid'
     let searchQuery = '';
+    let translations = window.FM_TRANSLATIONS || {};
+    let currentLang = window.FM_CURRENT_LANG || 'en';
+
+    // Translation function
+    function t(key, params = {}) {
+        let string = translations[key] || key;
+        for (const [placeholder, value] of Object.entries(params)) {
+            string = string.replace(`{${placeholder}}`, value);
+        }
+        return string;
+    }
 
     function getBaseUrl() {
         const scripts = document.getElementsByTagName('script');
@@ -71,7 +82,7 @@
             };
             
             xhr.onerror = function() {
-                reject(new Error('Errore di rete'));
+                reject(new Error(t('error_network')));
             };
             
             if (data instanceof FormData) {
@@ -150,7 +161,7 @@
                 renderBreadcrumb(currentPath);
             }
         } catch (e) {
-            fileList.innerHTML = '<div class="fm-empty"><i class="fa-solid fa-folder-xmark"></i><span>Errore caricamento file</span></div>';
+            fileList.innerHTML = '<div class="fm-empty"><i class="fa-solid fa-folder-xmark"></i><span>' + t('msg_error_loading') + '</span></div>';
         }
     }
 
@@ -162,7 +173,7 @@
         clearSelection();
         currentPath = path;
         currentPage = page;
-        fileList.innerHTML = '<div class="fm-loading"><i class="fa-solid fa-spinner fa-spin"></i><span>Caricamento...</span></div>';
+        fileList.innerHTML = '<div class="fm-loading"><i class="fa-solid fa-spinner fa-spin"></i><span>' + t('loading') + '</span></div>';
         
         try {
             const response = await ajax(getBaseUrl(), { 
@@ -179,7 +190,7 @@
                 renderBreadcrumb(currentPath);
             }
         } catch (e) {
-            fileList.innerHTML = '<div class="fm-empty"><i class="fa-solid fa-folder-xmark"></i><span>Errore caricamento directory</span></div>';
+            fileList.innerHTML = '<div class="fm-empty"><i class="fa-solid fa-folder-xmark"></i><span>' + t('msg_error_dir') + '</span></div>';
         }
     }
 
@@ -214,14 +225,14 @@
         html += `<button class="fm-page-btn" onclick="document.getElementById('fileManager').FM.goToPage(${pagination.page + 1})" ${pagination.page >= pagination.total_pages ? 'disabled' : ''}><i class="fa-solid fa-angle-right"></i></button>`;
         html += `<button class="fm-page-btn" onclick="document.getElementById('fileManager').FM.goToPage(${pagination.total_pages})" ${pagination.page >= pagination.total_pages ? 'disabled' : ''}><i class="fa-solid fa-angles-right"></i></button>`;
         
-        html += `<span class="fm-page-info">${pagination.total_items} elementi - Pag. ${pagination.page}/${pagination.total_pages}</span>`;
+        html += `<span class="fm-page-info">${pagination.total_items} ${t('pagination_items')} - ${t('pagination_page')} ${pagination.page}/${pagination.total_pages}</span>`;
         
         paginationEl.innerHTML = html;
     }
 
     function renderFileList(data) {
         if (!data.items || data.items.length === 0) {
-            fileList.innerHTML = '<div class="fm-empty"><i class="fa-solid fa-folder-open"></i><span>Nessun file o cartella</span></div>';
+            fileList.innerHTML = '<div class="fm-empty"><i class="fa-solid fa-folder-open"></i><span>' + t('empty_folder') + '</span></div>';
             return;
         }
         
@@ -237,7 +248,7 @@
         }
         
         if (filteredItems.length === 0) {
-            fileList.innerHTML = '<div class="fm-empty"><i class="fa-solid fa-folder-open"></i><span>Nessun risultato</span></div>';
+            fileList.innerHTML = '<div class="fm-empty"><i class="fa-solid fa-folder-open"></i><span>' + t('no_results') + '</span></div>';
             return;
         }
         
@@ -266,14 +277,14 @@
                     <div class="fm-item-info">
                         <div class="fm-item-name">${escapeHtml(item.name)}</div>
                         <div class="fm-item-meta">
-                            <span><i class="fa-solid ${item.is_dir ? 'fa-folder' : 'fa-file-lines'}"></i> ${item.is_dir ? 'Cartella' : size}</span>
+                            <span><i class="fa-solid ${item.is_dir ? 'fa-folder' : 'fa-file-lines'}"></i> ${item.is_dir ? t('type_folder') : size}</span>
                             <span><i class="fa-regular fa-clock"></i> ${modified}</span>
                         </div>
                     </div>
-                    ${downloadLink ? `<a href="${downloadLink}" class="fm-item-download" target="_blank" title="Scarica"><i class="fa-solid fa-download"></i></a>` : ''}
+                    ${downloadLink ? `<a href="${downloadLink}" class="fm-item-download" target="_blank" title="${t('btn_download')}"><i class="fa-solid fa-download"></i></a>` : ''}
                     <div class="fm-item-actions">
-                        <button type="button" class="fm-item-action btn-rename" title="Rinomina"><i class="fa-solid fa-pen"></i></button>
-                        <button type="button" class="fm-item-action btn-delete" title="Elimina"><i class="fa-solid fa-trash"></i></button>
+                        <button type="button" class="fm-item-action btn-rename" title="${t('btn_rename')}"><i class="fa-solid fa-pen"></i></button>
+                        <button type="button" class="fm-item-action btn-delete" title="${t('btn_delete')}"><i class="fa-solid fa-trash"></i></button>
                     </div>
                 </div>
             `;
@@ -364,9 +375,10 @@
             
             item.querySelector('.btn-delete')?.addEventListener('click', (e) => {
                 e.stopPropagation();
+                const itemName = item.querySelector('.fm-item-name').textContent;
                 showConfirm(
-                    '<i class="fa-solid fa-trash"></i> Conferma eliminazione',
-                    `Sei sicuro di voler eliminare "${item.querySelector('.fm-item-name').textContent}"?`,
+                    '<i class="fa-solid fa-trash"></i> ' + t('modal_confirm_title'),
+                    t('modal_confirm_message', {item: itemName}),
                     async () => {
                         await deleteItem(path, isDir);
                     }
@@ -405,17 +417,13 @@
         
         const count = selectedItems.size;
         showConfirm(
-            '<i class="fa-solid fa-trash"></i> Conferma eliminazione',
-            `Sei sicuro di voler eliminare ${count} element${count === 1 ? 'o' : 'i'} selezionat${count === 1 ? 'o' : 'i'}?`,
+            '<i class="fa-solid fa-trash"></i> ' + t('modal_confirm_title'),
+            t('modal_confirm_multiple', {count: count}),
             async () => {
                 for (const path of selectedItems) {
                     const item = currentItems.find(i => i.path === path);
                     if (item) {
-                        try {
-                            await ajax(getBaseUrl(), { action: 'delete', path: path, base_path: rootPath }, 'POST');
-                        } catch (e) {
-                            console.error('Errore eliminazione:', path);
-                        }
+                        await deleteItem(path, item.is_dir);
                     }
                 }
                 clearSelection();
@@ -444,10 +452,10 @@
             if (response.success) {
                 loadDirectory(currentPath);
             } else {
-                alert('Errore: ' + (response.error || 'Impossibile eliminare'));
+                alert(t('error_generic') + ': ' + (response.error || t('msg_delete_error')));
             }
         } catch (e) {
-            alert('Errore di rete');
+            alert(t('error_network'));
         }
     }
 
@@ -464,10 +472,10 @@
                 closeModal(modalNewFolder);
                 loadDirectory(currentPath);
             } else {
-                alert('Errore: ' + (response.error || 'Impossibile creare cartella'));
+                alert(t('error_generic') + ': ' + (response.error || t('msg_folder_error')));
             }
         } catch (e) {
-            alert('Errore di rete');
+            alert(t('error_network'));
         }
     }
 
@@ -482,7 +490,7 @@
                 <div class="fm-upload-item" id="${itemId}">
                     <i class="fa-solid fa-file" style="color:var(--fm-text-muted);"></i>
                     <span class="fm-upload-name">${escapeHtml(file.name)}</span>
-                    <span class="fm-upload-status">Caricamento...</span>
+                    <span class="fm-upload-status">${t('loading')}</span>
                 </div>
             `;
             uploadQueue.insertAdjacentHTML('beforeend', itemHtml);
@@ -499,11 +507,11 @@
                 
                 if (response.success && response.uploaded && response.uploaded.length > 0) {
                     el.classList.add('success');
-                    el.querySelector('.fm-upload-status').textContent = 'Completato';
+                    el.querySelector('.fm-upload-status').textContent = t('upload_completed');
                     el.querySelector('i').className = 'fa-solid fa-check';
                 } else {
                     el.classList.add('error');
-                    el.querySelector('.fm-upload-status').textContent = response.errors?.[0] || 'Errore';
+                    el.querySelector('.fm-upload-status').textContent = response.errors?.[0] || t('error_generic');
                     el.querySelector('i').className = 'fa-solid fa-xmark';
                 }
                 
@@ -512,7 +520,7 @@
                 const el = document.getElementById(itemId);
                 if (el) {
                     el.classList.add('error');
-                    el.querySelector('.fm-upload-status').textContent = 'Errore';
+                    el.querySelector('.fm-upload-status').textContent = t('error_generic');
                     el.querySelector('i').className = 'fa-solid fa-xmark';
                     setTimeout(() => el.remove(), 3000);
                 }
@@ -565,10 +573,10 @@
                     closeModal(modalRename);
                     loadDirectory(currentPath);
                 } else {
-                    alert('Errore: ' + (response.error || 'Impossibile rinominare'));
+                    alert(t('error_generic') + ': ' + (response.error || t('msg_rename_error')));
                 }
             } catch (e) {
-                alert('Errore di rete');
+                alert(t('error_network'));
             }
         });
     }
@@ -762,6 +770,16 @@
         searchInput.addEventListener('input', (e) => {
             searchQuery = e.target.value;
             renderFileList({ items: currentItems });
+        });
+    }
+
+    // Language switch functionality
+    const languageSelect = document.getElementById('languageSelect');
+    if (languageSelect) {
+        languageSelect.addEventListener('change', (e) => {
+            const newLang = e.target.value;
+            // Reload page with new language
+            window.location.href = window.location.pathname + '?lang=' + newLang;
         });
     }
 

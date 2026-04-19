@@ -133,6 +133,15 @@ body[data-theme="light"] {
     color: var(--fm-text-muted);
 }
 
+.fm-language-selector {
+    display: flex;
+    align-items: center;
+}
+
+.fm-language-selector .fm-select {
+    min-width: 120px;
+}
+
 .fm-btn {
     display: inline-flex;
     align-items: center;

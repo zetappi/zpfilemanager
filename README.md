@@ -1,91 +1,101 @@
 # ZP File Manager
 
-Un modulo di file management leggero per PHP con supporto drag & drop, upload multipli, creazione ed eliminazione cartelle. Progettato per essere facilmente integrabile come componente in altri progetti.
+A lightweight file management module for PHP with drag & drop support, multiple file uploads, and folder creation/deletion. Designed for easy integration as a component in other projects.
 
-## Caratteristiche
+## Features
 
-- Navigazione tra cartelle
-- Upload file multipli con drag & drop
-- Creazione cartelle
-- Eliminazione file e cartelle
-- Design responsive
-- Completamente asincrono (AJAX)
-- **Configurazione centralizzata** per facile integrazione
-- **Helper class riutilizzabile** per funzioni comuni
-- **Error handling migliorato** con try-catch
-- **Rate limiting basato su IP** (non aggirabile via session)
-- **CSRF protection** configurabile
-- **Logging configurabile** con gestione errori
+- Folder navigation
+- Multiple file upload with drag & drop
+- Folder creation
+- File and folder deletion
+- Responsive design
+- Fully asynchronous (AJAX)
+- **Centralized configuration** for easy integration
+- **Reusable helper class** for common functions
+- **Improved error handling** with try-catch
+- **IP-based rate limiting** (session-bypass resistant)
+- **Configurable CSRF protection**
+- **Configurable logging** with error handling
+- **Localization system** with support for 5 languages (en, it, fr, de, es)
+- **Real-time file search**
+- **Grid/list view toggle**
+- **Light/dark theme** with persistence
 
-## Uso Standalone
+## Standalone Usage
 
-> **Nota**: quando il file manager è integrato in un progetto più ampio, configurare l'autenticazione tramite `config.local.php`.
+> **Note**: when the file manager is integrated into a larger project, configure authentication via `config.local.php`.
 
-1. Copia i file in una directory del tuo server PHP
-2. Assicurati che la directory abbia permessi di scrittura
-3. (Opzionale) Copia `config.local.example.php` in `config.local.php` e personalizza
-4. Accedi a `index.php`
+1. Copy files to a directory on your PHP server
+2. Ensure the directory has write permissions
+3. (Optional) Copy `config.local.example.php` to `config.local.php` and customize
+4. Access `index.php`
 
-## Configurazione
+## Configuration
 
-Il file manager ora usa un sistema di configurazione centralizzato per facilitare l'integrazione.
+The file manager now uses a centralized configuration system for easier integration.
 
-### File di configurazione
+### Configuration Files
 
-- **config.php**: Configurazione predefinita (non modificare)
-- **config.local.php**: Override configurazione locale (crea questo file)
-- **config.local.example.php**: Esempio di configurazione locale
+- **config.php**: Default configuration (do not modify)
+- **config.local.php**: Local configuration overrides (create this file)
+- **config.local.example.php**: Local configuration example
 
-### Creare configurazione personalizzata
+### Creating Custom Configuration
 
-1. Copia `config.local.example.php` in `config.local.php`
-2. Modifica i valori secondo le tue esigenze
-3. `config.local.php` sovrascrive i valori di `config.php`
+1. Copy `config.local.example.php` to `config.local.php`
+2. Modify values according to your needs
+3. `config.local.php` overrides values from `config.php`
 
-### Opzioni di configurazione principali
+### Main Configuration Options
 
 ```php
-// Percorso base per i file
+// Base path for files
 define('FM_DEFAULT_BASE_PATH', __DIR__ . '/uploads');
 
-// Richiedi autenticazione
+// Require authentication
 define('FM_REQUIRE_AUTH', false);
 
-// Chiave sessione per autenticazione
+// Session key for authentication
 define('FM_AUTH_SESSION_KEY', 'user');
 
-// Protezione CSRF
+// CSRF protection
 define('FM_ENABLE_CSRF', true);
 
-// Rate limiting (richieste/minuto)
+// Rate limiting (requests/minute)
 define('FM_RATE_LIMIT', 30);
 
-// Dimensione massima file upload (bytes)
+// Maximum upload file size (bytes)
 define('FM_MAX_FILE_SIZE', 10 * 1024 * 1024);
 
-// Estensioni file consentite
+// Allowed file extensions
 define('FM_ALLOWED_EXTENSIONS', ['jpg', 'jpeg', 'png', 'pdf', 'doc', 'docx', 'txt']);
 
-// Abilita logging
+// Enable logging
 define('FM_ENABLE_LOGGING', true);
 
-// CORS origins consentiti
-define('FM_CORS_ALLOWED_ORIGINS', ['https://tuo-dominio.com']);
+// Allowed CORS origins
+define('FM_CORS_ALLOWED_ORIGINS', ['https://your-domain.com']);
+
+// Default language
+define('FM_DEFAULT_LANGUAGE', 'en');
+
+// Available languages
+define('FM_AVAILABLE_LANGUAGES', ['en', 'it', 'fr', 'de', 'es']);
 ```
 
-## Integrazione come Modulo
+## Integration as a Module
 
-### Opzione 1: Iframe
+### Option 1: Iframe
 
 ```html
 <iframe src="path/to/filemanager/index.php" width="100%" height="600"></iframe>
 ```
 
-### Opzione 2: Inline (PHP include)
+### Option 2: Inline (PHP include)
 
 ```php
 <?php
-// Definisci la cartella base prima dell'include
+// Define base path before include
 $fm_base_path = '/var/www/my-project/uploads';
 ?>
 <link rel="stylesheet" href="filemanager/style.css">
@@ -93,13 +103,13 @@ $fm_base_path = '/var/www/my-project/uploads';
 <script src="filemanager/filemanager.js"></script>
 ```
 
-### Opzione 3: Custom base path via URL
+### Option 3: Custom base path via URL
 
 ```html
 <iframe src="filemanager/index.php?base_path=/custom/uploads"></iframe>
 ```
 
-### Opzione 4: Integrazione completa (embedded)
+### Option 4: Full Integration (embedded)
 
 ```php
 <?php
@@ -118,48 +128,55 @@ $fm_base_path = '/custom/uploads';
 </html>
 ```
 
-## Struttura File
+## File Structure
 
 ```
 filemanager/
-├── index.php              # UI principale
-├── api.php                # Backend API
-├── config.php             # Configurazione predefinita
-├── config.local.example.php # Esempio configurazione locale
-├── FileManagerHelper.php   # Classe helper riutilizzabile
-├── auth.php               # Autenticazione (usa configurazione)
-├── style.css              # Stili
-├── filemanager.js         # Logica AJAX
-├── uploads/               # Directory upload (creata automaticamente)
-├── logs/                  # Directory log (creata automaticamente)
-└── README.md              # Documentazione
+├── index.php                    # Main UI
+├── api.php                      # Backend API
+├── config.php                   # Default configuration
+├── config.local.example.php     # Local configuration example
+├── FileManagerHelper.php        # Reusable helper class
+├── auth.php                     # Authentication (uses configuration)
+├── style.css                    # Styles
+├── filemanager.js               # AJAX logic
+├── lang/                        # Localization directory
+│   ├── Language.php             # Language loading system
+│   ├── en.php                   # English translations
+│   ├── it.php                   # Italian translations
+│   ├── fr.php                   # French translations
+│   ├── de.php                   # German translations
+│   └── es.php                   # Spanish translations
+├── uploads/                     # Upload directory (auto-created)
+├── logs/                        # Log directory (auto-created)
+└── README.it.md                 # Italian documentation
 ```
 
-## Integrazione in progetti con autenticazione
+## Integration in Projects with Authentication
 
-Il modulo è progettato per essere integrato in applicazioni PHP che gestiscono l'autenticazione.
+The module is designed to be integrated into PHP applications that handle authentication.
 
-### 1. Abilitare l'autenticazione
+### 1. Enable Authentication
 
 In `config.local.php`:
 
 ```php
 define('FM_REQUIRE_AUTH', true);
-define('FM_AUTH_SESSION_KEY', 'user_id'); // o la tua chiave sessione
+define('FM_AUTH_SESSION_KEY', 'user_id'); // or your session key
 ```
 
-### 2. Configurazione CORS
+### 2. CORS Configuration
 
 In `config.local.php`:
 
 ```php
-define('FM_CORS_ALLOWED_ORIGINS', ['https://tuo-dominio.com', 'https://app.tuo-dominio.it']);
+define('FM_CORS_ALLOWED_ORIGINS', ['https://your-domain.com', 'https://app.your-domain.it']);
 define('FM_CORS_ALLOW_CREDENTIALS', true);
 ```
 
-### 3. Configurazione logging
+### 3. Logging Configuration
 
-Il log viene scritto nella directory configurata (default: `logs/filemanager.log`). Assicurati che la directory sia scrivibile dal server.
+Logs are written to the configured directory (default: `logs/filemanager.log`). Ensure the directory is writable by the server.
 
 In `config.local.php`:
 
@@ -168,7 +185,7 @@ define('FM_ENABLE_LOGGING', true);
 define('FM_LOG_FILE', __DIR__ . '/logs/filemanager.log');
 ```
 
-### 4. Personalizzazione whitelist upload
+### 4. Upload Whitelist Customization
 
 In `config.local.php`:
 
@@ -179,91 +196,141 @@ define('FM_ALLOWED_EXTENSIONS', [
 ]);
 ```
 
-### 5. Rate limiting
+### 5. Rate Limiting
 
-Configurabile in `config.local.php`:
+Configurable in `config.local.php`:
 
 ```php
-define('FM_RATE_LIMIT', 30);           // richieste/minuto
-define('FM_RATE_LIMIT_WINDOW', 60);    // secondi
+define('FM_RATE_LIMIT', 30);           // requests/minute
+define('FM_RATE_LIMIT_WINDOW', 60);    // seconds
 ```
+
+**How Rate Limiting Works:**
+
+The rate limiting system in `api.php` operates as follows:
+
+1. **IP Identification**: Obtains the client's IP address from `$_SERVER['REMOTE_ADDR']` and uses it as a unique identifier
+2. **Per-IP Tracking**: Creates a separate JSON file for each IP: `logs/ratelimit_{md5(IP)}.json`
+3. **Configuration**: 
+   - `FM_RATE_LIMIT`: maximum requests per window (default: 30)
+   - `FM_RATE_LIMIT_WINDOW`: window duration in seconds (default: 60)
+4. **Logic**:
+   - Reads the IP's JSON file if it exists
+   - If data is older than the time window → resets counter to 0
+   - If counter >= limit → returns HTTP 429 "Too many requests"
+   - Otherwise increments counter and saves to file
+5. **Security**: 
+   - IP-based, not session-based → cannot be bypassed by deleting session cookies
+   - Each IP has its own file → isolation between users
+   - Automatic reset after time window expires
+
+**Example:**
+- Limit: 30 requests/60 seconds
+- IP 192.168.1.1 makes 25 requests → all accepted
+- 31st request within 60 seconds → blocked with 429
+- After 60 seconds → counter automatically resets
+
+## Localization
+
+The file manager supports multiple languages with a complete localization system.
+
+### Available Languages
+
+- 🇬🇧 **English** (en)
+- 🇮🇹 **Italian** (it)
+- 🇫🇷 **French** (fr)
+- 🇩🇪 **German** (de)
+- 🇪🇸 **Spanish** (es)
+
+### Adding New Languages
+
+To add a new language:
+
+1. Create a file in the `lang/` directory with the language code (e.g., `ru.php`)
+2. Copy the structure from `en.php` or `it.php`
+3. Translate all keys
+4. Add the language code to `FM_AVAILABLE_LANGUAGES` in `config.php`
+
+### Language Switching
+
+Users can change language via the selector in the header. Preference is saved in a cookie for 30 days.
 
 ## API Endpoints
 
-Tutti gli endpoint accettano `base_path` come parametro opzionale.
+All endpoints accept `base_path` as an optional parameter.
 
-| Azione | Metodo | Descrizione |
+| Action | Method | Description |
 |--------|--------|-------------|
-| `get_csrf_token` | GET | Ottieni token CSRF |
-| `list` | GET | Lista contenuti directory |
-| `create_folder` | POST | Crea nuova cartella |
-| `delete` | POST | Elimina file/cartella |
-| `rename` | POST | Rinomina file/cartella |
-| `upload` | POST | Carica file |
-| `download` | GET | Scarica file |
+| `get_csrf_token` | GET | Get CSRF token |
+| `list` | GET | List directory contents |
+| `create_folder` | POST | Create new folder |
+| `delete` | POST | Delete file/folder |
+| `rename` | POST | Rename file/folder |
+| `upload` | POST | Upload file |
+| `download` | GET | Download file |
 
-## Helper Class Riutilizzabile
+## Reusable Helper Class
 
-La classe `FileManagerHelper` fornisce funzioni utility riutilizzabili per integrazione:
+The `FileManagerHelper` class provides reusable utility functions for integration:
 
 ```php
 require_once 'FileManagerHelper.php';
 
-// Sanitizza input per logging
+// Sanitize input for logging
 $safe = FileManagerHelper::sanitizeLog($input);
 
-// Formatta dimensione file
+// Format file size
 $size = FileManagerHelper::formatSize(1024 * 1024); // "1.00 MB"
 
-// Verifica path sicuro
+// Check path is safe
 if (FileManagerHelper::isPathSafe($path)) { /* ... */ }
 
-// Verifica path within base
+// Check path within base
 if (FileManagerHelper::isPathWithinBase($target, $base)) { /* ... */ }
 
-// Elimina ricorsivamente
+// Delete recursively
 FileManagerHelper::deleteRecursive($path);
 
-// Assicura directory esista
+// Ensure directory exists
 FileManagerHelper::ensureDirectory($path, 0755);
 
-// Log con gestione errori
+// Log with error handling
 FileManagerHelper::log($message, $logFile);
 ```
 
-## Requisiti
+## Requirements
 
-- PHP 7.4+ (consigliato)
-- Apache/Nginx con supporto PHP
-- Permessi di scrittura sulla directory target
-- Sessioni PHP abilitate (per autenticazione e rate limiting)
-- Accesso in scrittura alla directory `logs/` del modulo
+- PHP 7.4+ (recommended)
+- Apache/Nginx with PHP support
+- Write permissions on target directory
+- PHP sessions enabled (for authentication and rate limiting)
+- Write access to module's `logs/` directory
 
-## Sicurezza
+## Security
 
-- **CORS**: configurabile via `FM_CORS_ALLOWED_ORIGINS`
-- **Autenticazione**: opzionale, configurabile via `FM_REQUIRE_AUTH`
-- **CSRF Protection**: abilitabile via `FM_ENABLE_CSRF`
-- **Whitelist upload**: configurabile via `FM_ALLOWED_EXTENSIONS`
-- **Logging**: operazioni loggate con gestione errori
-- **Rate limiting**: basato su IP, configurabile
-- **Permessi**: configurabili via `FM_FILE_PERMISSIONS` e `FM_DIR_PERMISSIONS`
-- **Protezione path traversal**: blocco accesso fuori dalla directory base
-- **Messaggi di errore**: non espongono percorsi interni
-- **Error handling**: try-catch per operazioni critiche
+- **CORS**: configurable via `FM_CORS_ALLOWED_ORIGINS`
+- **Authentication**: optional, configurable via `FM_REQUIRE_AUTH`
+- **CSRF Protection**: enableable via `FM_ENABLE_CSRF`
+- **Upload whitelist**: configurable via `FM_ALLOWED_EXTENSIONS`
+- **Logging**: operations logged with error handling
+- **Rate limiting**: IP-based, configurable
+- **Permissions**: configurable via `FM_FILE_PERMISSIONS` and `FM_DIR_PERMISSIONS`
+- **Path traversal protection**: blocks access outside base directory
+- **Error messages**: do not expose internal paths
+- **Error handling**: try-catch for critical operations
 
-## Miglioramenti per Affidabilità
+## Reliability Improvements
 
-- **Configurazione centralizzata**: facile personalizzazione senza modificare codice
-- **Helper class**: codice riutilizzabile e testabile
-- **Error handling migliorato**: try-catch per operazioni critiche
-- **Logging robusto**: gestione errori nella scrittura log
-- **Rate limiting IP-based**: non aggirabile via session
-- **Validazione configurazione**: verifica directory scrivibili
-- **Funzioni helper spostate**: fuori dallo switch case per migliore organizzazione
-- **Sanitizzazione input centralizzata**: in FileManagerHelper
-- **Cross-platform**: gestione path Windows/Unix
+- **Centralized configuration**: easy customization without code modification
+- **Helper class**: reusable and testable code
+- **Improved error handling**: try-catch for critical operations
+- **Robust logging**: error handling in log writing
+- **IP-based rate limiting**: session-bypass resistant
+- **Configuration validation**: checks for writable directories
+- **Helper functions moved**: outside switch case for better organization
+- **Centralized input sanitization**: in FileManagerHelper
+- **Cross-platform**: Windows/Unix path handling
 
-## Licenza
+## License
 
 MIT

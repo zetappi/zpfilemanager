@@ -2,6 +2,11 @@
 // Load configuration
 require_once __DIR__ . '/config.php';
 require_once __DIR__ . '/FileManagerHelper.php';
+require_once __DIR__ . '/lang/Language.php';
+
+// Load language
+$lang = $_GET['lang'] ?? $_COOKIE['fm_lang'] ?? (defined('FM_DEFAULT_LANGUAGE') ? FM_DEFAULT_LANGUAGE : 'en');
+Language::load($lang);
 
 header('Content-Type: application/json; charset=utf-8');
 
@@ -89,7 +94,7 @@ $allowedBaseDir = defined('FM_ALLOWED_BASE_DIR') ? FM_ALLOWED_BASE_DIR : $script
 // Ensure default base directory exists
 if (!FileManagerHelper::ensureDirectory($defaultBase, defined('FM_DIR_PERMISSIONS') ? FM_DIR_PERMISSIONS : 0755)) {
     http_response_code(500);
-    echo json_encode(['success' => false, 'error' => 'Impossibile creare directory base']);
+    echo json_encode(['success' => false, 'error' => Language::get('msg_folder_error')]);
     exit;
 }
 
@@ -98,7 +103,7 @@ $basePath = $inputBase !== null ? rtrim($inputBase, '/\\') : $defaultBase;
 $basePathReal = realpath($basePath);
 if ($basePathReal === false || !FileManagerHelper::isPathWithinBase($basePathReal, $allowedBaseDir)) {
     http_response_code(400);
-    echo json_encode(['success' => false, 'error' => 'Base path non consentito']);
+    echo json_encode(['success' => false, 'error' => Language::get('msg_access_denied')]);
     exit;
 }
 
@@ -110,7 +115,7 @@ $currentPath = trim($currentPath, '/\\');
 
 if (!FileManagerHelper::isPathSafe($currentPath)) {
     http_response_code(403);
-    echo json_encode(['success' => false, 'error' => 'Accesso negato']);
+    echo json_encode(['success' => false, 'error' => Language::get('msg_access_denied')]);
     exit;
 }
 
@@ -129,7 +134,7 @@ if ($basePathReal === false) {
 if ($basePathReal !== false && $fullPathReal !== false) {
     if (!FileManagerHelper::isPathWithinBase($fullPathReal, $basePathReal)) {
         http_response_code(403);
-        echo json_encode(['success' => false, 'error' => 'Accesso negato: fuori dalla directory base']);
+        echo json_encode(['success' => false, 'error' => Language::get('msg_access_denied') . ': fuori dalla directory base']);
         exit;
     }
 }
@@ -278,7 +283,7 @@ switch ($action) {
         $path = isset($_POST['path']) ? trim($_POST['path'], '/\\') : '';
         
         if (empty($path)) {
-            echo json_encode(['success' => false, 'error' => 'Path richiesto']);
+            echo json_encode(['success' => false, 'error' => Language::get('msg_path_required')]);
             exit;
         }
         
@@ -291,7 +296,7 @@ switch ($action) {
         
         $base = $basePathReal ?: $basePath;
         if (!FileManagerHelper::isPathWithinBase($targetReal, $base)) {
-            echo json_encode(['success' => false, 'error' => 'Accesso negato']);
+            echo json_encode(['success' => false, 'error' => Language::get('msg_access_denied')]);
             exit;
         }
         
@@ -307,7 +312,7 @@ switch ($action) {
         if (FileManagerHelper::deleteRecursive($targetReal)) {
             echo json_encode(['success' => true]);
         } else {
-            echo json_encode(['success' => false, 'error' => 'Errore eliminazione. Verifica i permessi.']);
+            echo json_encode(['success' => false, 'error' => Language::get('msg_delete_error')]);
         }
         break;
 
@@ -343,7 +348,7 @@ switch ($action) {
         
         $base = $basePathReal ?: $basePath;
         if (!FileManagerHelper::isPathWithinBase($targetReal, $base)) {
-            echo json_encode(['success' => false, 'error' => 'Accesso negato']);
+            echo json_encode(['success' => false, 'error' => Language::get('msg_access_denied')]);
             exit;
         }
         
@@ -351,14 +356,14 @@ switch ($action) {
         $newPath = $dirName . '/' . $newName;
         
         if (file_exists($newPath)) {
-            echo json_encode(['success' => false, 'error' => 'Esiste già un elemento con questo nome']);
+            echo json_encode(['success' => false, 'error' => Language::get('msg_exists')]);
             exit;
         }
         
         if (@rename($targetReal, $newPath)) {
             echo json_encode(['success' => true]);
         } else {
-            echo json_encode(['success' => false, 'error' => 'Errore rinomina. Verifica i permessi.']);
+            echo json_encode(['success' => false, 'error' => Language::get('msg_rename_error')]);
         }
         break;
 
@@ -372,7 +377,7 @@ switch ($action) {
                 FileManagerHelper::log($logStart, $logFile);
             }
         if (empty($_FILES) || !isset($_FILES['files'])) {
-            echo json_encode(['success' => false, 'error' => 'Nessun file caricato']);
+            echo json_encode(['success' => false, 'error' => Language::get('msg_no_file')]);
             exit;
         }
         
@@ -381,7 +386,7 @@ switch ($action) {
         $targetDir = $fullPathReal ?: $fullPath;
         
         if (!is_dir($targetDir)) {
-            echo json_encode(['success' => false, 'error' => 'Directory target non esiste']);
+            echo json_encode(['success' => false, 'error' => Language::get('msg_folder_error')]);
             exit;
         }
         
@@ -399,13 +404,13 @@ switch ($action) {
             $error = is_array($files['error']) ? $files['error'][$i] : $files['error'];
             
             if ($error !== UPLOAD_ERR_OK) {
-                $errors[] = $name . ': errore upload (' . $error . ')';
+                $errors[] = $name . ': ' . Language::get('msg_upload_error') . ' (' . $error . ')';
                 continue;
             }
             
             // Check file size
             if ($maxFileSize > 0 && filesize($tmpName) > $maxFileSize) {
-                $errors[] = $name . ': file troppo grande (max ' . FileManagerHelper::formatSize($maxFileSize) . ')';
+                $errors[] = $name . ': ' . Language::get('msg_file_too_large', ['size' => FileManagerHelper::formatSize($maxFileSize)]);
                 continue;
             }
             
@@ -413,7 +418,7 @@ switch ($action) {
             
             // Validate file extension against whitelist
             if (!FileManagerHelper::isExtensionAllowed($name, $allowedExtensions)) {
-                $errors[] = $name . ': tipo di file non consentito';
+                $errors[] = $name . ': ' . Language::get('msg_file_not_allowed');
                 continue;
             }
             
@@ -438,7 +443,7 @@ switch ($action) {
                     'size' => FileManagerHelper::formatSize(filesize($targetFile))
                 ];
             } else {
-                $errors[] = $name . ': impossibile salvare il file';
+                $errors[] = $name . ': ' . Language::get('msg_upload_error');
             }
         }
         
@@ -462,7 +467,7 @@ switch ($action) {
         
         if (empty($path)) {
             http_response_code(400);
-            echo 'Path richiesto';
+            echo Language::get('msg_path_required');
             exit;
         }
         
@@ -471,7 +476,7 @@ switch ($action) {
         
         if ($targetReal === false) {
             http_response_code(404);
-            echo 'File non trovato';
+            echo Language::get('msg_not_found');
             exit;
         }
         
@@ -480,13 +485,13 @@ switch ($action) {
         
         if (strpos($targetStr, $base) !== 0) {
             http_response_code(403);
-            echo 'Accesso negato';
+            echo Language::get('msg_access_denied');
             exit;
         }
         
         if (is_dir($targetReal)) {
             http_response_code(400);
-            echo 'Non è un file';
+            echo Language::get('msg_not_file');
             exit;
         }
         
