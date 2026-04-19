@@ -142,7 +142,7 @@ define('FM_DEFAULT_LANGUAGE', 'en');
 
 // Available languages
 // Default: ['en', 'it']
-define('FM_AVAILABLE_LANGUAGES', ['en', 'it', 'fr', 'de', 'es']);
+define('FM_AVAILABLE_LANGUAGES', ['en', 'it', 'fr', 'de', 'es', 'pt', 'ru', 'nl']);
 
 // Allow user to change language
 // Default: true
