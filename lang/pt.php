@@ -122,7 +122,7 @@ return [
     
     // Additional
     'directory_superiore' => 'Subir',
-    'copyright' => '© 2024 ZP Gerenciador de Arquivos',
+    'copyright' => 'ZP Gerenciador de Arquivos - © 2026',
     'copyright_email' => 'Licença MIT',
     
     // Editor

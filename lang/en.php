@@ -122,7 +122,7 @@ return [
     
     // Additional
     'directory_superiore' => 'Go up',
-    'copyright' => '© 2024 ZP File Manager',
+    'copyright' => 'ZP File Manager - © 2026',
     'copyright_email' => 'MIT License',
     
     // Editor

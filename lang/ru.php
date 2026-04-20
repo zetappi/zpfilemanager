@@ -122,7 +122,7 @@ return [
     
     // Additional
     'directory_superiore' => 'Вверх',
-    'copyright' => '© 2024 ZP Файловый менеджер',
+    'copyright' => 'ZP Файловый менеджер - © 2026',
     'copyright_email' => 'Лицензия MIT',
     
     // Editor

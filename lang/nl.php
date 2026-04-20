@@ -122,7 +122,7 @@ return [
     
     // Additional
     'directory_superiore' => 'Omhoog',
-    'copyright' => '© 2024 ZP Bestandsbeheer',
+    'copyright' => 'ZP Bestandsbeheer - © 2026',
     'copyright_email' => 'MIT Licentie',
     
     // Editor
