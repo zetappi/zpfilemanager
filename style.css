@@ -5,19 +5,19 @@
     --fm-bg-secondary: #1a1f26;
     --fm-bg-tertiary: #242b33;
     --fm-bg-hover: #2d353f;
-    --fm-border: #333d4a;
+    --fm-border: #586467;
     --fm-text-primary: #e7e9ea;
     --fm-text-secondary: #8b98a5;
     --fm-text-muted: #536471;
-    --fm-accent: #1d9bf0;
+    --fm-accent: #2d552d;
     --fm-accent-hover: #1a8cd8;
-    --fm-success: #00ba7c;
-    --fm-danger: #f4212e;
-    --fm-warning: #ffd400;
+    --fm-success: #00ba38;
+    --fm-danger: #9e3139;
+    --fm-warning: #de902ae0;
     --fm-radius-sm: 6px;
     --fm-radius-md: 10px;
     --fm-radius-lg: 14px;
-    --fm-shadow: 0 8px 24px rgba(0,0,0,0.4);
+    --fm-shadow: 0 8px 24px rgba(88, 83, 83, 0.4);
     --fm-transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
