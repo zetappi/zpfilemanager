@@ -8,6 +8,7 @@ return [
     // UI Elements
     'title' => 'ZP File Manager',
     'new_folder' => 'Nouveau dossier',
+    'new_file' => 'Nouveau fichier',
     'upload' => 'Télécharger',
     'search' => 'Rechercher des fichiers...',
     'loading' => 'Chargement...',
@@ -27,6 +28,8 @@ return [
     // Modals
     'modal_new_folder_title' => 'Créer un nouveau dossier',
     'modal_new_folder_name' => 'Nom du dossier',
+    'modal_new_file_title' => 'Créer un nouveau fichier',
+    'modal_new_file_name' => 'Nom du fichier',
     'modal_rename_title' => 'Renommer',
     'modal_rename_name' => 'Nouveau nom',
     'modal_confirm_title' => 'Confirmer',
@@ -37,6 +40,9 @@ return [
     // Messages
     'msg_folder_created' => 'Dossier créé avec succès',
     'msg_folder_exists' => 'Le dossier existe déjà',
+    'msg_file_created' => 'Fichier créé avec succès',
+    'msg_file_exists' => 'Le fichier existe déjà',
+    'msg_file_create_error' => 'Erreur lors de la création du fichier. Vérifiez les permissions.',
     'upload_completed' => 'Téléchargement terminé',
     'msg_folder_error' => 'Erreur lors de la création du dossier. Vérifiez les permissions.',
     'msg_deleted' => 'Élément supprimé avec succès',

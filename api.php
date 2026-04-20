@@ -291,6 +291,49 @@ switch ($action) {
         }
         break;
 
+    case 'create_file':
+            // Log action
+            if (defined('FM_ENABLE_LOGGING') && FM_ENABLE_LOGGING) {
+                $logFile = defined('FM_LOG_FILE') ? FM_LOG_FILE : __DIR__ . '/logs/filemanager.log';
+                $safePath = FileManagerHelper::sanitizeLog($currentPath);
+                $safeIp = FileManagerHelper::sanitizeLog($_SERVER['REMOTE_ADDR'] ?? '');
+                $logLine = sprintf("%s | CREATE_FILE | %s | %s", date('Y-m-d H:i:s'), $safePath, $safeIp);
+                FileManagerHelper::log($logLine, $logFile);
+            }
+        $name = isset($_POST['name']) ? trim($_POST['name']) : '';
+
+        if (empty($name) || preg_match('/[\/\\\\:*?"<>|]/', $name)) {
+            echo json_encode(['success' => false, 'error' => Language::get('msg_name_invalid')]);
+            exit;
+        }
+
+        $newPath = ($fullPathReal ?: $fullPath) . '/' . $name;
+
+        if (file_exists($newPath)) {
+            echo json_encode(['success' => false, 'error' => Language::get('msg_file_exists')]);
+            exit;
+        }
+
+        $filePerms = defined('FM_FILE_PERMISSIONS') ? FM_FILE_PERMISSIONS : 0640;
+        if (@file_put_contents($newPath, '') !== false) {
+            @chmod($newPath, $filePerms);
+            echo json_encode([
+                'success' => true,
+                'item' => [
+                    'name' => $name,
+                    'path' => FileManagerHelper::relativePath($newPath, $basePathReal ?: $basePath),
+                    'is_dir' => false,
+                    'size' => 0,
+                    'size_fmt' => '0 B',
+                    'modified' => filemtime($newPath),
+                    'modified_fmt' => date('d/m/Y H:i', filemtime($newPath))
+                ]
+            ]);
+        } else {
+            echo json_encode(['success' => false, 'error' => Language::get('msg_file_create_error')]);
+        }
+        break;
+
     case 'delete':
         $path = isset($_POST['path']) ? trim($_POST['path'], '/\\') : '';
         

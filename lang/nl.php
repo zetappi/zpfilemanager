@@ -8,6 +8,7 @@ return [
     // UI Elements
     'title' => 'ZP Bestandsbeheer',
     'new_folder' => 'Nieuwe map',
+    'new_file' => 'Nieuw bestand',
     'upload' => 'Upload',
     'search' => 'Zoek bestanden...',
     'loading' => 'Laden...',
@@ -27,6 +28,8 @@ return [
     // Modals
     'modal_new_folder_title' => 'Nieuwe map aanmaken',
     'modal_new_folder_name' => 'Mapnaam',
+    'modal_new_file_title' => 'Nieuw bestand aanmaken',
+    'modal_new_file_name' => 'Bestandsnaam',
     'modal_rename_title' => 'Hernoemen',
     'modal_rename_name' => 'Nieuwe naam',
     'modal_confirm_title' => 'Bevestigen',
@@ -37,6 +40,9 @@ return [
     // Messages
     'msg_folder_created' => 'Map succesvol aangemaakt',
     'msg_folder_exists' => 'Map bestaat al',
+    'msg_file_created' => 'Bestand succesvol aangemaakt',
+    'msg_file_exists' => 'Bestand bestaat al',
+    'msg_file_create_error' => 'Fout bij aanmaken bestand. Controleer de machtigingen.',
     'upload_completed' => 'Upload voltooid',
     'msg_folder_error' => 'Fout bij aanmaken map. Controleer de machtigingen.',
     'msg_deleted' => 'Item succesvol verwijderd',

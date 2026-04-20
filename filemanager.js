@@ -9,11 +9,13 @@
     const uploadQueue = document.getElementById('uploadQueue');
     const paginationEl = document.getElementById('pagination');
     const modalNewFolder = document.getElementById('modalNewFolder');
+    const modalNewFile = document.getElementById('modalNewFile');
     const modalConfirm = document.getElementById('modalConfirm');
     const modalRename = document.getElementById('modalRename');
     const modalEditor = document.getElementById('modalEditor');
     const modalAlert = document.getElementById('modalAlert');
     const newFolderInput = document.getElementById('newFolderName');
+    const newFileInput = document.getElementById('newFileName');
     const renameInput = document.getElementById('renameInput');
     const editorTextarea = document.getElementById('editorTextarea');
     const editorTitle = document.getElementById('editorTitle');
@@ -502,13 +504,33 @@
             formData.append('path', currentPath);
             formData.append('base_path', rootPath);
             formData.append('name', name);
-            
+
             const response = await ajax(getBaseUrl(), formData, 'POST');
             if (response.success) {
                 closeModal(modalNewFolder);
                 loadDirectory(currentPath);
             } else {
                 alert(t('error_generic') + ': ' + (response.error || t('msg_folder_error')));
+            }
+        } catch (e) {
+            alert(t('error_network'));
+        }
+    }
+
+    async function createFile(name) {
+        try {
+            const formData = new FormData();
+            formData.append('action', 'create_file');
+            formData.append('path', currentPath);
+            formData.append('base_path', rootPath);
+            formData.append('name', name);
+
+            const response = await ajax(getBaseUrl(), formData, 'POST');
+            if (response.success) {
+                closeModal(modalNewFile);
+                loadDirectory(currentPath);
+            } else {
+                alert(t('error_generic') + ': ' + (response.error || t('msg_file_create_error')));
             }
         } catch (e) {
             alert(t('error_network'));
@@ -699,6 +721,28 @@
         const name = newFolderInput.value.trim();
         if (name) {
             createFolder(name);
+        }
+    });
+
+    document.getElementById('btnNewFile').addEventListener('click', () => {
+        showModal(modalNewFile);
+    });
+
+    document.getElementById('btnCancelFile').addEventListener('click', () => {
+        closeModal(modalNewFile);
+    });
+
+    document.getElementById('btnCreateFile').addEventListener('click', () => {
+        const name = newFileInput.value.trim();
+        if (name) {
+            createFile(name);
+        }
+    });
+
+    newFileInput.addEventListener('keydown', (e) => {
+        if (e.key === 'Enter') {
+            const name = newFileInput.value.trim();
+            if (name) createFile(name);
         }
     });
 

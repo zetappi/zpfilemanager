@@ -37,8 +37,24 @@ setcookie('fm_lang', $lang, time() + (30 * 24 * 60 * 60), '/');
                         <i class="fa-solid fa-search"></i>
                         <input type="text" id="searchInput" placeholder="<?php echo Language::get('search'); ?>" autocomplete="off">
                     </div>
-                    <?php if (Language::canSwitchLanguage()): ?>
-                    <div class="fm-language-selector">
+                    <div class="fm-header-right">
+                        <button type="button" id="btnTheme" class="fm-btn-icon" title="<?php echo Language::get('theme_' . (isset($_COOKIE['fm_theme']) && $_COOKIE['fm_theme'] === 'light' ? 'light' : 'dark')); ?>">
+                            <i class="fa-solid fa-moon" id="themeIcon"></i>
+                        </button>
+                        <button type="button" id="btnViewToggle" class="fm-btn-icon" title="<?php echo Language::get('view_list'); ?>">
+                            <i class="fa-solid fa-list" id="viewIcon"></i>
+                        </button>
+                        <button type="button" id="btnNewFolder" class="fm-btn-icon" title="<?php echo Language::get('new_folder'); ?>">
+                            <i class="fa-solid fa-folder-plus"></i>
+                        </button>
+                        <button type="button" id="btnNewFile" class="fm-btn-icon" title="<?php echo Language::get('new_file'); ?>">
+                            <i class="fa-solid fa-file-circle-plus"></i>
+                        </button>
+                        <label class="fm-btn-icon" title="<?php echo Language::get('upload'); ?>">
+                            <i class="fa-solid fa-cloud-arrow-up"></i>
+                            <input type="file" id="fileInput" multiple hidden>
+                        </label>
+                        <?php if (Language::canSwitchLanguage()): ?>
                         <select id="languageSelect" class="fm-select">
                             <?php foreach (Language::getAvailableLanguages() as $langCode): ?>
                             <option value="<?php echo $langCode; ?>" <?php echo $langCode === Language::getCurrentLanguage() ? 'selected' : ''; ?>>
@@ -61,23 +77,8 @@ setcookie('fm_lang', $lang, time() + (30 * 24 * 60 * 60), '/');
                             </option>
                             <?php endforeach; ?>
                         </select>
+                        <?php endif; ?>
                     </div>
-                    <?php endif; ?>
-                    <button type="button" id="btnTheme" class="fm-btn-icon" title="<?php echo Language::get('theme_' . (isset($_COOKIE['fm_theme']) && $_COOKIE['fm_theme'] === 'light' ? 'light' : 'dark')); ?>">
-                        <i class="fa-solid fa-moon" id="themeIcon"></i>
-                    </button>
-                    <button type="button" id="btnViewToggle" class="fm-btn-icon" title="<?php echo Language::get('view_list'); ?>">
-                        <i class="fa-solid fa-list" id="viewIcon"></i>
-                    </button>
-                    <button type="button" id="btnNewFolder" class="fm-btn fm-btn-primary">
-                        <i class="fa-solid fa-folder-plus"></i>
-                        <span><?php echo Language::get('new_folder'); ?></span>
-                    </button>
-                    <label class="fm-btn fm-btn-upload">
-                        <i class="fa-solid fa-cloud-arrow-up"></i>
-                        <span><?php echo Language::get('upload'); ?></span>
-                        <input type="file" id="fileInput" multiple hidden>
-                    </label>
                 </div>
             </header>
 
@@ -163,6 +164,24 @@ setcookie('fm_lang', $lang, time() + (30 * 24 * 60 * 60), '/');
             <div class="fm-modal-footer">
                 <button type="button" class="fm-btn fm-btn-ghost" id="btnCancelFolder"><?php echo Language::get('btn_cancel'); ?></button>
                 <button type="button" class="fm-btn fm-btn-primary" id="btnCreateFolder"><?php echo Language::get('btn_confirm'); ?></button>
+            </div>
+        </div>
+    </div>
+
+    <div class="fm-modal" id="modalNewFile">
+        <div class="fm-modal-content">
+            <div class="fm-modal-header">
+                <h2><?php echo Language::get('modal_new_file_title'); ?></h2>
+                <button type="button" class="fm-modal-close" data-close>
+                    <i class="fa-solid fa-xmark"></i>
+                </button>
+            </div>
+            <div class="fm-modal-body">
+                <input type="text" id="newFileName" class="fm-input" placeholder="<?php echo Language::get('modal_new_file_name'); ?>" autocomplete="off">
+            </div>
+            <div class="fm-modal-footer">
+                <button type="button" class="fm-btn fm-btn-ghost" id="btnCancelFile"><?php echo Language::get('btn_cancel'); ?></button>
+                <button type="button" class="fm-btn fm-btn-primary" id="btnCreateFile"><?php echo Language::get('btn_confirm'); ?></button>
             </div>
         </div>
     </div>

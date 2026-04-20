@@ -8,6 +8,7 @@ return [
     // UI Elements
     'title' => 'ZP File Manager',
     'new_folder' => 'Nuova Cartella',
+    'new_file' => 'Nuovo File',
     'upload' => 'Carica',
     'search' => 'Cerca file...',
     'loading' => 'Caricamento...',
@@ -27,6 +28,8 @@ return [
     // Modals
     'modal_new_folder_title' => 'Crea Nuova Cartella',
     'modal_new_folder_name' => 'Nome cartella',
+    'modal_new_file_title' => 'Crea Nuovo File',
+    'modal_new_file_name' => 'Nome file',
     'modal_rename_title' => 'Rinomina',
     'modal_rename_name' => 'Nuovo nome',
     'modal_confirm_title' => 'Conferma',
@@ -37,6 +40,9 @@ return [
     // Messages
     'msg_folder_created' => 'Cartella creata con successo',
     'msg_folder_exists' => 'La cartella esiste già',
+    'msg_file_created' => 'File creato con successo',
+    'msg_file_exists' => 'Il file esiste già',
+    'msg_file_create_error' => 'Errore creazione file. Verifica i permessi.',
     'upload_completed' => 'Upload completato',
     'msg_folder_error' => 'Errore creazione cartella. Verifica i permessi.',
     'msg_deleted' => 'Elemento eliminato con successo',

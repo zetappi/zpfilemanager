@@ -8,6 +8,7 @@ return [
     // UI Elements
     'title' => 'ZP File Manager',
     'new_folder' => 'Neuer Ordner',
+    'new_file' => 'Neue Datei',
     'upload' => 'Hochladen',
     'search' => 'Dateien suchen...',
     'loading' => 'Laden...',
@@ -27,6 +28,8 @@ return [
     // Modals
     'modal_new_folder_title' => 'Neuen Ordner erstellen',
     'modal_new_folder_name' => 'Ordnername',
+    'modal_new_file_title' => 'Neue Datei erstellen',
+    'modal_new_file_name' => 'Dateiname',
     'modal_rename_title' => 'Umbenennen',
     'modal_rename_name' => 'Neuer Name',
     'modal_confirm_title' => 'Bestätigen',
@@ -37,6 +40,9 @@ return [
     // Messages
     'msg_folder_created' => 'Ordner erfolgreich erstellt',
     'msg_folder_exists' => 'Ordner existiert bereits',
+    'msg_file_created' => 'Datei erfolgreich erstellt',
+    'msg_file_exists' => 'Datei existiert bereits',
+    'msg_file_create_error' => 'Fehler beim Erstellen der Datei. Berechtigungen prüfen.',
     'upload_completed' => 'Upload abgeschlossen',
     'msg_folder_error' => 'Fehler beim Erstellen des Ordners. Berechtigungen prüfen.',
     'msg_deleted' => 'Element erfolgreich gelöscht',

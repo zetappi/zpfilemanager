@@ -8,6 +8,7 @@ return [
     // UI Elements
     'title' => 'ZP Gerenciador de Arquivos',
     'new_folder' => 'Nova Pasta',
+    'new_file' => 'Novo Arquivo',
     'upload' => 'Upload',
     'search' => 'Pesquisar arquivos...',
     'loading' => 'Carregando...',
@@ -27,6 +28,8 @@ return [
     // Modals
     'modal_new_folder_title' => 'Criar Nova Pasta',
     'modal_new_folder_name' => 'Nome da pasta',
+    'modal_new_file_title' => 'Criar Novo Arquivo',
+    'modal_new_file_name' => 'Nome do arquivo',
     'modal_rename_title' => 'Renomear',
     'modal_rename_name' => 'Novo nome',
     'modal_confirm_title' => 'Confirmar',
@@ -37,6 +40,9 @@ return [
     // Messages
     'msg_folder_created' => 'Pasta criada com sucesso',
     'msg_folder_exists' => 'A pasta já existe',
+    'msg_file_created' => 'Arquivo criado com sucesso',
+    'msg_file_exists' => 'O arquivo já existe',
+    'msg_file_create_error' => 'Erro ao criar arquivo. Verifique as permissões.',
     'upload_completed' => 'Upload concluído',
     'msg_folder_error' => 'Erro ao criar pasta. Verifique as permissões.',
     'msg_deleted' => 'Item excluído com sucesso',

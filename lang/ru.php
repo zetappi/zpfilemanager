@@ -8,6 +8,7 @@ return [
     // UI Elements
     'title' => 'ZP Файловый менеджер',
     'new_folder' => 'Новая папка',
+    'new_file' => 'Новый файл',
     'upload' => 'Загрузить',
     'search' => 'Поиск файлов...',
     'loading' => 'Загрузка...',
@@ -27,6 +28,8 @@ return [
     // Modals
     'modal_new_folder_title' => 'Создать новую папку',
     'modal_new_folder_name' => 'Имя папки',
+    'modal_new_file_title' => 'Создать новый файл',
+    'modal_new_file_name' => 'Имя файла',
     'modal_rename_title' => 'Переименовать',
     'modal_rename_name' => 'Новое имя',
     'modal_confirm_title' => 'Подтвердить',
@@ -37,6 +40,9 @@ return [
     // Messages
     'msg_folder_created' => 'Папка успешно создана',
     'msg_folder_exists' => 'Папка уже существует',
+    'msg_file_created' => 'Файл успешно создан',
+    'msg_file_exists' => 'Файл уже существует',
+    'msg_file_create_error' => 'Ошибка создания файла. Проверьте разрешения.',
     'upload_completed' => 'Загрузка завершена',
     'msg_folder_error' => 'Ошибка создания папки. Проверьте разрешения.',
     'msg_deleted' => 'Элемент успешно удалён',

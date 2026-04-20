@@ -98,6 +98,20 @@ body[data-theme="light"] {
     align-items: center;
 }
 
+.fm-header-right {
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    gap: 4px;
+}
+
+.fm-header-right .fm-select {
+    padding: 4px 8px;
+    font-size: 12px;
+    min-width: auto;
+    height: 32px;
+}
+
 .fm-search {
     display: flex;
     align-items: center;
