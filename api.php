@@ -210,16 +210,17 @@ switch ($action) {
             foreach ($entries as $entry) {
                 if ($entry === '.' || $entry === '..') continue;
                 if (!$showHidden && strpos($entry, '.') === 0) continue;
-                
+
                 $itemPath = $listPath . '/' . $entry;
                 $isDir = is_dir($itemPath);
-                
+                $fileSize = $isDir ? null : filesize($itemPath);
+
                 $items[] = [
                     'name' => $entry,
                     'path' => FileManagerHelper::relativePath($itemPath, $basePathReal ?: $basePath),
                     'is_dir' => $isDir,
-                    'size' => $isDir ? null : filesize($itemPath),
-                    'size_fmt' => $isDir ? null : FileManagerHelper::formatSize(filesize($itemPath)),
+                    'size' => $fileSize,
+                    'size_fmt' => $isDir ? null : FileManagerHelper::formatSize($fileSize),
                     'modified' => filemtime($itemPath),
                     'modified_fmt' => date('d/m/Y H:i', filemtime($itemPath))
                 ];
@@ -246,7 +247,7 @@ switch ($action) {
         });
         
         $totalItems = count($items);
-        $totalPages = ceil($totalItems / $perPage);
+        $totalPages = max(1, ceil($totalItems / $perPage));
         $offset = ($page - 1) * $perPage;
         $paginatedItems = array_slice($items, $offset, $perPage);
         
@@ -281,12 +282,8 @@ switch ($action) {
         }
         
         $newPath = ($fullPathReal ?: $fullPath) . '/' . $name;
-        
-        if (file_exists($newPath)) {
-            echo json_encode(['success' => false, 'error' => Language::get('msg_folder_exists')]);
-            exit;
-        }
-        
+
+        // mkdir fails if directory already exists, avoiding race condition
         $dirPerms = defined('FM_DIR_PERMISSIONS') ? FM_DIR_PERMISSIONS : 0750;
         if (@mkdir($newPath, $dirPerms, false)) {
             echo json_encode([
@@ -299,6 +296,8 @@ switch ($action) {
                     'modified' => date('d/m/Y H:i')
                 ]
             ]);
+        } elseif (file_exists($newPath)) {
+            echo json_encode(['success' => false, 'error' => Language::get('msg_folder_exists')]);
         } else {
             echo json_encode(['success' => false, 'error' => Language::get('msg_folder_error')]);
         }
@@ -322,61 +321,56 @@ switch ($action) {
 
         $newPath = ($fullPathReal ?: $fullPath) . '/' . $name;
 
-        if (file_exists($newPath)) {
-            echo json_encode(['success' => false, 'error' => Language::get('msg_file_exists')]);
+        // Use exclusive create (mode 'x') to avoid race condition
+        $filePerms = defined('FM_FILE_PERMISSIONS') ? FM_FILE_PERMISSIONS : 0640;
+        $handle = @fopen($newPath, 'x');
+        if ($handle === false) {
+            if (file_exists($newPath)) {
+                echo json_encode(['success' => false, 'error' => Language::get('msg_file_exists')]);
+            } else {
+                echo json_encode(['success' => false, 'error' => Language::get('msg_file_create_error')]);
+            }
             exit;
         }
+        fclose($handle);
+        @chmod($newPath, $filePerms);
 
-        $filePerms = defined('FM_FILE_PERMISSIONS') ? FM_FILE_PERMISSIONS : 0640;
-        if (@file_put_contents($newPath, '') !== false) {
-            @chmod($newPath, $filePerms);
-            echo json_encode([
-                'success' => true,
-                'item' => [
-                    'name' => $name,
-                    'path' => FileManagerHelper::relativePath($newPath, $basePathReal ?: $basePath),
-                    'is_dir' => false,
-                    'size' => 0,
-                    'size_fmt' => '0 B',
-                    'modified' => filemtime($newPath),
-                    'modified_fmt' => date('d/m/Y H:i', filemtime($newPath))
-                ]
-            ]);
-        } else {
-            echo json_encode(['success' => false, 'error' => Language::get('msg_file_create_error')]);
-        }
+        echo json_encode([
+            'success' => true,
+            'item' => [
+                'name' => $name,
+                'path' => FileManagerHelper::relativePath($newPath, $basePathReal ?: $basePath),
+                'is_dir' => false,
+                'size' => 0,
+                'size_fmt' => '0 B',
+                'modified' => filemtime($newPath),
+                'modified_fmt' => date('d/m/Y H:i', filemtime($newPath))
+            ]
+        ]);
         break;
 
     case 'delete':
         $path = isset($_POST['path']) ? trim($_POST['path'], '/\\') : '';
-        
-            // Log action
-            if (defined('FM_ENABLE_LOGGING') && FM_ENABLE_LOGGING) {
-                $logFile = defined('FM_LOG_FILE') ? FM_LOG_FILE : __DIR__ . '/logs/filemanager.log';
-                $safePath = FileManagerHelper::sanitizeLog($path ?? '');
-                $safeIp = FileManagerHelper::sanitizeLog($_SERVER['REMOTE_ADDR'] ?? '');
-                $logLine = sprintf("%s | DELETE | %s | %s", date('Y-m-d H:i:s'), $safePath, $safeIp);
-                FileManagerHelper::log($logLine, $logFile);
-            }
-        
+
         if (empty($path)) {
             echo json_encode(['success' => false, 'error' => Language::get('msg_path_required')]);
             exit;
         }
-        
+
         $targetPath = ($basePathReal ?: $basePath) . '/' . $path;
         $targetReal = realpath($targetPath);
-        
+
         if ($targetReal === false) {
-            $targetReal = $targetPath;
+            echo json_encode(['success' => false, 'error' => Language::get('msg_not_found')]);
+            exit;
         }
-        
+
         $base = $basePathReal ?: $basePath;
         if (!FileManagerHelper::isPathWithinBase($targetReal, $base)) {
             echo json_encode(['success' => false, 'error' => Language::get('msg_access_denied')]);
             exit;
         }
-        
+
         $allowDeleteNonEmpty = defined('FM_ALLOW_DELETE_NON_EMPTY') ? FM_ALLOW_DELETE_NON_EMPTY : true;
         if (!$allowDeleteNonEmpty && is_dir($targetReal)) {
             $items = @scandir($targetReal);
@@ -385,7 +379,16 @@ switch ($action) {
                 exit;
             }
         }
-        
+
+        // Log action after validation
+        if (defined('FM_ENABLE_LOGGING') && FM_ENABLE_LOGGING) {
+            $logFile = defined('FM_LOG_FILE') ? FM_LOG_FILE : __DIR__ . '/logs/filemanager.log';
+            $safePath = FileManagerHelper::sanitizeLog($path);
+            $safeIp = FileManagerHelper::sanitizeLog($_SERVER['REMOTE_ADDR'] ?? '');
+            $logLine = sprintf("%s | DELETE | %s | %s", date('Y-m-d H:i:s'), $safePath, $safeIp);
+            FileManagerHelper::log($logLine, $logFile);
+        }
+
         if (FileManagerHelper::deleteRecursive($targetReal)) {
             echo json_encode(['success' => true]);
         } else {
@@ -396,17 +399,7 @@ switch ($action) {
     case 'rename':
         $path = isset($_POST['path']) ? trim($_POST['path'], '/\\') : '';
         $newName = isset($_POST['new_name']) ? trim($_POST['new_name']) : '';
-        
-            // Log action
-            if (defined('FM_ENABLE_LOGGING') && FM_ENABLE_LOGGING) {
-                $logFile = defined('FM_LOG_FILE') ? FM_LOG_FILE : __DIR__ . '/logs/filemanager.log';
-                $safePath = FileManagerHelper::sanitizeLog($path ?? '');
-                $safeNewName = FileManagerHelper::sanitizeLog($newName ?? '');
-                $safeIp = FileManagerHelper::sanitizeLog($_SERVER['REMOTE_ADDR'] ?? '');
-                $logLine = sprintf("%s | RENAME | %s -> %s | %s", date('Y-m-d H:i:s'), $safePath, $safeNewName, $safeIp);
-                FileManagerHelper::log($logLine, $logFile);
-            }
-        
+
         if (empty($path)) {
             echo json_encode(['success' => false, 'error' => Language::get('msg_path_required')]);
             exit;
@@ -415,33 +408,44 @@ switch ($action) {
             echo json_encode(['success' => false, 'error' => Language::get('msg_name_required')]);
             exit;
         }
-        
+
         if (preg_match('/[\/\\\\:*?"<>|]/', $newName)) {
             echo json_encode(['success' => false, 'error' => Language::get('msg_name_invalid')]);
             exit;
         }
-        
+
         $targetPath = ($basePathReal ?: $basePath) . '/' . $path;
         $targetReal = realpath($targetPath);
-        
+
         if ($targetReal === false) {
-            $targetReal = $targetPath;
+            echo json_encode(['success' => false, 'error' => Language::get('msg_not_found')]);
+            exit;
         }
-        
+
         $base = $basePathReal ?: $basePath;
         if (!FileManagerHelper::isPathWithinBase($targetReal, $base)) {
             echo json_encode(['success' => false, 'error' => Language::get('msg_access_denied')]);
             exit;
         }
-        
+
         $dirName = dirname($targetReal);
         $newPath = $dirName . '/' . $newName;
-        
+
         if (file_exists($newPath)) {
             echo json_encode(['success' => false, 'error' => Language::get('msg_exists')]);
             exit;
         }
-        
+
+        // Log action after validation
+        if (defined('FM_ENABLE_LOGGING') && FM_ENABLE_LOGGING) {
+            $logFile = defined('FM_LOG_FILE') ? FM_LOG_FILE : __DIR__ . '/logs/filemanager.log';
+            $safePath = FileManagerHelper::sanitizeLog($path);
+            $safeNewName = FileManagerHelper::sanitizeLog($newName);
+            $safeIp = FileManagerHelper::sanitizeLog($_SERVER['REMOTE_ADDR'] ?? '');
+            $logLine = sprintf("%s | RENAME | %s -> %s | %s", date('Y-m-d H:i:s'), $safePath, $safeNewName, $safeIp);
+            FileManagerHelper::log($logLine, $logFile);
+        }
+
         if (@rename($targetReal, $newPath)) {
             echo json_encode(['success' => true]);
         } else {
@@ -504,15 +508,18 @@ switch ($action) {
                 continue;
             }
             
-            // Generate unique filename if enabled
+            // Generate unique filename if enabled, or check for conflicts
             if ($autoRename) {
                 $safeName = FileManagerHelper::generateUniqueFilename($targetDir, $safeName);
+            } elseif (file_exists($targetDir . '/' . $safeName)) {
+                $errors[] = $name . ': ' . Language::get('msg_file_exists');
+                continue;
             }
-            
+
             $targetFile = $targetDir . '/' . $safeName;
-            
+
             $success = false;
-            
+
             if (is_uploaded_file($tmpName)) {
                 $success = @move_uploaded_file($tmpName, $targetFile);
             }
@@ -762,23 +769,35 @@ switch ($action) {
             exit;
         }
         
-        // Backup original file
-        $backupPath = $fullPathReal . '.bak';
-        @copy($fullPathReal, $backupPath);
-        
-        $result = file_put_contents($fullPathReal, $content);
-        
+        // Backup original file in secure location (outside web root)
+        $backupDir = __DIR__ . '/logs/backups';
+        if (!FileManagerHelper::ensureDirectory($backupDir, 0750)) {
+            http_response_code(500);
+            echo json_encode(['success' => false, 'error' => 'Backup directory error']);
+            exit;
+        }
+
+        $backupName = md5($fullPathReal) . '_' . basename($fullPathReal) . '.bak';
+        $backupPath = $backupDir . '/' . $backupName;
+        $backupCreated = @copy($fullPathReal, $backupPath);
+
+        $result = file_put_contents($fullPathReal, $content, LOCK_EX);
+
         if ($result === false) {
             // Restore from backup
-            @copy($backupPath, $fullPathReal);
-            @unlink($backupPath);
+            if ($backupCreated) {
+                @copy($backupPath, $fullPathReal);
+                @unlink($backupPath);
+            }
             http_response_code(500);
             echo json_encode(['success' => false, 'error' => 'Error writing file']);
             exit;
         }
-        
-        // Remove backup on success
-        @unlink($backupPath);
+
+        // Remove backup on success (keep last N backups per cleanup)
+        if ($backupCreated) {
+            @unlink($backupPath);
+        }
         
         // Log action
         if (defined('FM_ENABLE_LOGGING') && FM_ENABLE_LOGGING) {

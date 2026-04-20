@@ -43,6 +43,7 @@
     let searchQuery = '';
     let translations = window.FM_TRANSLATIONS || {};
     let currentLang = window.FM_CURRENT_LANG || 'en';
+    let editableExtensions = window.FM_EDITABLE_EXTENSIONS || ['txt', 'php', 'js', 'css', 'html', 'htm', 'md', 'json', 'xml', 'yml', 'yaml', 'ini', 'htaccess', 'conf', 'log'];
 
     // Translation function
     function t(key, params = {}) {
@@ -374,7 +375,6 @@
 
     function isEditable(filename) {
         const ext = filename.split('.').pop().toLowerCase();
-        const editableExtensions = ['txt', 'php', 'js', 'css', 'html', 'htm', 'md', 'json', 'xml', 'yml', 'yaml', 'ini', 'htaccess', 'conf', 'log'];
         return editableExtensions.includes(ext);
     }
 

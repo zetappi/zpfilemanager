@@ -18,10 +18,11 @@ setcookie('fm_lang', Language::getCurrentLanguage(), time() + (30 * 24 * 60 * 60
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
     <link rel="stylesheet" href="style.css">
     <script>
-        // Pass translations to frontend
+        // Pass translations and config to frontend
         window.FM_TRANSLATIONS = <?php echo json_encode(Language::$translations); ?>;
         window.FM_CURRENT_LANG = '<?php echo Language::getCurrentLanguage(); ?>';
         window.FM_AVAILABLE_LANGS = <?php echo json_encode(Language::getAvailableLanguages()); ?>;
+        window.FM_EDITABLE_EXTENSIONS = <?php echo json_encode(defined('FM_EDITABLE_EXTENSIONS') ? FM_EDITABLE_EXTENSIONS : ['txt', 'php', 'js', 'css', 'html', 'htm', 'md', 'json', 'xml', 'yml', 'yaml', 'ini', 'htaccess', 'conf', 'log']); ?>;
     </script>
 </head>
 <body>

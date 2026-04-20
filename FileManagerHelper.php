@@ -49,12 +49,13 @@ class FileManagerHelper {
     
     /**
      * Sanitize filename for HTTP headers (prevent header injection)
-     * 
+     *
      * @param string $filename Filename
      * @return string Sanitized filename
      */
     public static function sanitizeFilename($filename) {
-        return preg_replace('/[\r\n]/', '', $filename);
+        // Remove control chars, newlines, and quotes that could break headers
+        return preg_replace('/[\r\n"]/', '', $filename);
     }
     
     /**
