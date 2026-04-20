@@ -7,7 +7,7 @@ $lang = $_GET['lang'] ?? $_COOKIE['fm_lang'] ?? (defined('FM_DEFAULT_LANGUAGE') 
 Language::load($lang);
 
 // Set language cookie for 30 days
-setcookie('fm_lang', $lang, time() + (30 * 24 * 60 * 60), '/');
+setcookie('fm_lang', Language::getCurrentLanguage(), time() + (30 * 24 * 60 * 60), '/');
 ?>
 <!DOCTYPE html>
 <html lang="<?php echo Language::getCurrentLanguage(); ?>">
@@ -129,7 +129,6 @@ setcookie('fm_lang', $lang, time() + (30 * 24 * 60 * 60), '/');
                 <i class="fa-solid fa-cloud-arrow-up"></i>
                 <p><?php echo Language::get('dropzone_text'); ?></p>
                 <span><?php echo Language::get('dropzone_or'); ?> <?php echo Language::get('dropzone_click'); ?></span>
-                <input type="file" id="fileInput" multiple hidden>
             </div>
 
             <main class="fm-content" id="fileList">

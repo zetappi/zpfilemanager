@@ -56,8 +56,11 @@ if (rand(1, 100) === 1) { // 1% chance to run cleanup
     }
 }
 
-if (file_exists($rateLimitFile)) {
-    $rateLimitData = json_decode(@file_get_contents($rateLimitFile), true) ?: [];
+$rateLimitFp = @fopen($rateLimitFile, 'c+');
+if ($rateLimitFp !== false) {
+    flock($rateLimitFp, LOCK_EX);
+    $rawContent = stream_get_contents($rateLimitFp);
+    $rateLimitData = json_decode($rawContent, true) ?: [];
 }
 
 // Reset if older than window
@@ -66,13 +69,23 @@ if (!isset($rateLimitData['start']) || ($currentTime - $rateLimitData['start'] >
 }
 
 if ($rateLimitData['count'] >= $rateLimit) {
+    if ($rateLimitFp !== false) {
+        flock($rateLimitFp, LOCK_UN);
+        fclose($rateLimitFp);
+    }
     http_response_code(429);
     echo json_encode(['success'=>false,'error'=>'Too many requests']);
     exit;
 }
 
 $rateLimitData['count']++;
-@file_put_contents($rateLimitFile, json_encode($rateLimitData));
+if ($rateLimitFp !== false) {
+    ftruncate($rateLimitFp, 0);
+    rewind($rateLimitFp);
+    fwrite($rateLimitFp, json_encode($rateLimitData));
+    flock($rateLimitFp, LOCK_UN);
+    fclose($rateLimitFp);
+}
 
 // CSRF Protection: generate and validate token for POST requests
 $enableCsrf = defined('FM_ENABLE_CSRF') ? FM_ENABLE_CSRF : true;
@@ -263,14 +276,14 @@ switch ($action) {
         $name = isset($_POST['name']) ? trim($_POST['name']) : '';
         
         if (empty($name) || preg_match('/[\/\\\\:*?"<>|]/', $name)) {
-            echo json_encode(['success' => false, 'error' => 'Nome cartella non valido']);
+            echo json_encode(['success' => false, 'error' => Language::get('msg_name_invalid')]);
             exit;
         }
         
         $newPath = ($fullPathReal ?: $fullPath) . '/' . $name;
         
         if (file_exists($newPath)) {
-            echo json_encode(['success' => false, 'error' => 'Cartella già esistente']);
+            echo json_encode(['success' => false, 'error' => Language::get('msg_folder_exists')]);
             exit;
         }
         
@@ -287,7 +300,7 @@ switch ($action) {
                 ]
             ]);
         } else {
-            echo json_encode(['success' => false, 'error' => 'Errore creazione cartella. Verifica i permessi.']);
+            echo json_encode(['success' => false, 'error' => Language::get('msg_folder_error')]);
         }
         break;
 
@@ -394,13 +407,17 @@ switch ($action) {
                 FileManagerHelper::log($logLine, $logFile);
             }
         
-        if (empty($path) || empty($newName)) {
-            echo json_encode(['success' => false, 'error' => 'Path e nuovo nome richiesti']);
+        if (empty($path)) {
+            echo json_encode(['success' => false, 'error' => Language::get('msg_path_required')]);
+            exit;
+        }
+        if (empty($newName)) {
+            echo json_encode(['success' => false, 'error' => Language::get('msg_name_required')]);
             exit;
         }
         
         if (preg_match('/[\/\\\\:*?"<>|]/', $newName)) {
-            echo json_encode(['success' => false, 'error' => 'Nome non valido']);
+            echo json_encode(['success' => false, 'error' => Language::get('msg_name_invalid')]);
             exit;
         }
         
@@ -557,10 +574,7 @@ switch ($action) {
             exit;
         }
         
-        $base = str_replace('\\', '/', $basePathReal ?: $basePath);
-        $targetStr = str_replace('\\', '/', $targetReal);
-        
-        if (strpos($targetStr, $base) !== 0) {
+        if (!FileManagerHelper::isPathWithinBase($targetReal, $basePathReal ?: $basePath)) {
             http_response_code(403);
             echo json_encode(['success' => false, 'error' => Language::get('msg_access_denied')]);
             exit;
@@ -757,6 +771,7 @@ switch ($action) {
         if ($result === false) {
             // Restore from backup
             @copy($backupPath, $fullPathReal);
+            @unlink($backupPath);
             http_response_code(500);
             echo json_encode(['success' => false, 'error' => 'Error writing file']);
             exit;

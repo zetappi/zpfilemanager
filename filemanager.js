@@ -60,11 +60,14 @@
     function ajax(url, data, method = 'GET') {
         return new Promise((resolve, reject) => {
             const xhr = new XMLHttpRequest();
-            xhr.open(method, url, true);
             
-            if (!(data instanceof FormData)) {
-                xhr.setRequestHeader('Content-Type', 'application/x-www-form-urlencoded');
+            let openUrl = url;
+            if (method !== 'POST' && !(data instanceof FormData)) {
+                const query = Object.keys(data).map(k => encodeURIComponent(k) + '=' + encodeURIComponent(data[k])).join('&');
+                if (query) openUrl = url + '?' + query;
             }
+            
+            xhr.open(method, openUrl, true);
             
             // Add CSRF token to POST requests
             if (method === 'POST') {
@@ -72,6 +75,9 @@
                     data.append('csrf_token', csrfToken);
                 } else {
                     data.csrf_token = csrfToken;
+                }
+                if (!(data instanceof FormData)) {
+                    xhr.setRequestHeader('Content-Type', 'application/x-www-form-urlencoded');
                 }
                 xhr.setRequestHeader('X-CSRF-Token', csrfToken);
             }
@@ -94,8 +100,6 @@
                 const params = Object.keys(data).map(k => encodeURIComponent(k) + '=' + encodeURIComponent(data[k])).join('&');
                 xhr.send(params);
             } else {
-                const query = Object.keys(data).map(k => encodeURIComponent(k) + '=' + encodeURIComponent(data[k])).join('&');
-                xhr.open(method, url + '?' + query, true);
                 xhr.send();
             }
         });
@@ -294,7 +298,7 @@
             const size = item.size_fmt || item.size || '';
             const modified = item.modified_fmt || item.modified || '';
             const isSelected = selectedItems.has(item.path);
-            const downloadLink = !item.is_dir ? `api.php?action=download&path=${encodeURIComponent(item.path)}&base_path=${encodeURIComponent(rootPath)}` : '';
+            const downloadLink = !item.is_dir ? `api.php?action=download&path=${encodeURIComponent(item.path)}&base_path=${encodeURIComponent(rootPath)}&csrf_token=${encodeURIComponent(csrfToken)}` : '';
 
             html += `
                 <div class="fm-item ${isSelected ? 'selected' : ''}" data-path="${item.path}" data-is-dir="${item.is_dir}" data-index="${index}">
@@ -452,7 +456,7 @@
             const item = currentItems.find(i => i.path === path);
             if (item && !item.is_dir) {
                 const link = document.createElement('a');
-                link.href = `api.php?action=download&path=${encodeURIComponent(item.path)}&base_path=${encodeURIComponent(rootPath)}`;
+                link.href = `api.php?action=download&path=${encodeURIComponent(item.path)}&base_path=${encodeURIComponent(rootPath)}&csrf_token=${encodeURIComponent(csrfToken)}`;
                 link.download = item.name;
                 document.body.appendChild(link);
                 link.click();
@@ -660,18 +664,16 @@
                 editorTextarea.value = response.content;
             } else {
                 closeModal(modalEditor);
-                showConfirm(
+                showAlert(
                     '<i class="fa-solid fa-circle-exclamation"></i> ' + t('error_generic'),
-                    t('editor_error') + ': ' + (response.error || 'Unknown error'),
-                    () => {}
+                    t('editor_error') + ': ' + (response.error || 'Unknown error')
                 );
             }
         } catch (e) {
             closeModal(modalEditor);
-            showConfirm(
+            showAlert(
                 '<i class="fa-solid fa-circle-exclamation"></i> ' + t('error_network'),
-                t('editor_error') + ': ' + t('error_network'),
-                () => {}
+                t('editor_error') + ': ' + t('error_network')
             );
         }
     }
@@ -694,17 +696,15 @@
                     t('editor_saved')
                 );
             } else {
-                showConfirm(
+                showAlert(
                     '<i class="fa-solid fa-circle-exclamation"></i> ' + t('error_generic'),
-                    t('editor_save_error') + ': ' + (response.error || 'Unknown error'),
-                    () => {}
+                    t('editor_save_error') + ': ' + (response.error || 'Unknown error')
                 );
             }
         } catch (e) {
-            showConfirm(
+            showAlert(
                 '<i class="fa-solid fa-circle-exclamation"></i> ' + t('error_network'),
-                t('editor_save_error') + ': ' + t('error_network'),
-                () => {}
+                t('editor_save_error') + ': ' + t('error_network')
             );
         }
     }
