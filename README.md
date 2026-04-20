@@ -1,14 +1,18 @@
 # ZP File Manager
 
-A lightweight file management module for PHP with drag & drop support, multiple file uploads, and folder creation/deletion. Designed for easy integration as a component in other projects.
+A lightweight file management module for PHP with drag & drop support, multiple file uploads, folder and file creation/deletion. Designed for easy integration as a component in other projects.
 
 ## Features
 
 - Folder navigation
 - Multiple file upload with drag & drop
+- **New file creation** (empty file)
 - Folder creation
 - File and folder deletion
-- Responsive design
+- File and folder rename
+- File editor (inline, for text/code files)
+- File download
+- Responsive design (desktop, tablet, mobile)
 - Fully asynchronous (AJAX)
 - **Centralized configuration** for easy integration
 - **Reusable helper class** for common functions
@@ -16,10 +20,12 @@ A lightweight file management module for PHP with drag & drop support, multiple 
 - **IP-based rate limiting** (session-bypass resistant)
 - **Configurable CSRF protection**
 - **Configurable logging** with error handling
-- **Localization system** with support for 5 languages (en, it, fr, de, es)
+- **Localization system** with support for 8 languages (en, it, fr, de, es, pt, nl, ru)
 - **Real-time file search**
 - **Grid/list view toggle**
 - **Light/dark theme** with persistence
+- **Compact icon toolbar** (new folder, new file, upload, theme, view toggle)
+- **Language selector** in header
 
 ## Standalone Usage
 
@@ -80,7 +86,7 @@ define('FM_CORS_ALLOWED_ORIGINS', ['https://your-domain.com']);
 define('FM_DEFAULT_LANGUAGE', 'en');
 
 // Available languages
-define('FM_AVAILABLE_LANGUAGES', ['en', 'it', 'fr', 'de', 'es']);
+define('FM_AVAILABLE_LANGUAGES', ['en', 'it', 'fr', 'de', 'es', 'pt', 'nl', 'ru']);
 ```
 
 ## Integration as a Module
@@ -146,7 +152,10 @@ filemanager/
 │   ├── it.php                   # Italian translations
 │   ├── fr.php                   # French translations
 │   ├── de.php                   # German translations
-│   └── es.php                   # Spanish translations
+│   ├── es.php                   # Spanish translations
+│   ├── pt.php                   # Portuguese translations
+│   ├── nl.php                   # Dutch translations
+│   └── ru.php                   # Russian translations
 ├── uploads/                     # Upload directory (auto-created)
 ├── logs/                        # Log directory (auto-created)
 └── README.it.md                 # Italian documentation
@@ -241,6 +250,9 @@ The file manager supports multiple languages with a complete localization system
 - 🇫🇷 **French** (fr)
 - 🇩🇪 **German** (de)
 - 🇪🇸 **Spanish** (es)
+- 🇵🇹 **Portuguese** (pt)
+- 🇳🇱 **Dutch** (nl)
+- 🇷🇺 **Russian** (ru)
 
 ### Adding New Languages
 
@@ -264,10 +276,13 @@ All endpoints accept `base_path` as an optional parameter.
 | `get_csrf_token` | GET | Get CSRF token |
 | `list` | GET | List directory contents |
 | `create_folder` | POST | Create new folder |
+| `create_file` | POST | Create new empty file |
 | `delete` | POST | Delete file/folder |
 | `rename` | POST | Rename file/folder |
 | `upload` | POST | Upload file |
 | `download` | GET | Download file |
+| `read_file` | GET | Read file content for editor |
+| `write_file` | POST | Save file content from editor |
 
 ## Reusable Helper Class
 
