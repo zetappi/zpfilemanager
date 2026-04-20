@@ -21,6 +21,8 @@ return [
     'btn_rename' => 'Rename',
     'btn_download' => 'Download',
     'btn_close' => 'Close',
+    'btn_save' => 'Save',
+    'btn_edit' => 'Edit',
     
     // Modals
     'modal_new_folder_title' => 'Create New Folder',
@@ -116,4 +118,11 @@ return [
     'directory_superiore' => 'Go up',
     'copyright' => '© 2024 ZP File Manager',
     'copyright_email' => 'MIT License',
+    
+    // Editor
+    'editor_title' => 'Edit File',
+    'editor_loading' => 'Loading file...',
+    'editor_error' => 'Error loading file',
+    'editor_saved' => 'File saved successfully',
+    'editor_save_error' => 'Error saving file',
 ];

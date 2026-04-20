@@ -21,6 +21,8 @@ return [
     'btn_rename' => 'Renomear',
     'btn_download' => 'Baixar',
     'btn_close' => 'Fechar',
+    'btn_save' => 'Salvar',
+    'btn_edit' => 'Editar',
     
     // Modals
     'modal_new_folder_title' => 'Criar Nova Pasta',
@@ -116,4 +118,11 @@ return [
     'directory_superiore' => 'Subir',
     'copyright' => '© 2024 ZP Gerenciador de Arquivos',
     'copyright_email' => 'Licença MIT',
+    
+    // Editor
+    'editor_title' => 'Editar Arquivo',
+    'editor_loading' => 'Carregando arquivo...',
+    'editor_error' => 'Erro ao carregar arquivo',
+    'editor_saved' => 'Arquivo salvo com sucesso',
+    'editor_save_error' => 'Erro ao salvar arquivo',
 ];

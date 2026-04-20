@@ -509,6 +509,162 @@ switch ($action) {
         @readfile($targetReal);
         exit;
 
+    case 'read_file':
+        if (!defined('FM_ENABLE_EDITOR') || !FM_ENABLE_EDITOR) {
+            http_response_code(403);
+            echo json_encode(['success' => false, 'error' => 'Editor disabled']);
+            exit;
+        }
+        
+        $path = isset($_GET['path']) ? $_GET['path'] : $_POST['path'] ?? '';
+        $path = trim($path, '/\\');
+        
+        if (!FileManagerHelper::isPathSafe($path)) {
+            http_response_code(403);
+            echo json_encode(['success' => false, 'error' => Language::get('msg_access_denied')]);
+            exit;
+        }
+        
+        $fullPath = $path !== '' ? $basePath . '/' . $path : $basePath;
+        $fullPathReal = realpath($fullPath);
+        
+        if ($fullPathReal === false) {
+            http_response_code(404);
+            echo json_encode(['success' => false, 'error' => Language::get('msg_not_found')]);
+            exit;
+        }
+        
+        if ($fullPathReal !== false && !FileManagerHelper::isPathWithinBase($fullPathReal, $basePathReal)) {
+            http_response_code(403);
+            echo json_encode(['success' => false, 'error' => Language::get('msg_access_denied')]);
+            exit;
+        }
+        
+        if (is_dir($fullPathReal)) {
+            http_response_code(400);
+            echo json_encode(['success' => false, 'error' => Language::get('msg_not_file')]);
+            exit;
+        }
+        
+        $extension = strtolower(pathinfo($fullPathReal, PATHINFO_EXTENSION));
+        $editableExtensions = defined('FM_EDITABLE_EXTENSIONS') ? FM_EDITABLE_EXTENSIONS : [];
+        
+        if (!in_array($extension, $editableExtensions)) {
+            http_response_code(403);
+            echo json_encode(['success' => false, 'error' => 'File type not editable']);
+            exit;
+        }
+        
+        $maxSize = defined('FM_MAX_EDIT_FILE_SIZE') ? FM_MAX_EDIT_FILE_SIZE : 5242880;
+        if ($maxSize > 0 && filesize($fullPathReal) > $maxSize) {
+            http_response_code(413);
+            echo json_encode(['success' => false, 'error' => 'File too large to edit']);
+            exit;
+        }
+        
+        $content = file_get_contents($fullPathReal);
+        if ($content === false) {
+            http_response_code(500);
+            echo json_encode(['success' => false, 'error' => 'Error reading file']);
+            exit;
+        }
+        
+        // Convert to UTF-8 if needed
+        $encoding = mb_detect_encoding($content, ['UTF-8', 'ISO-8859-1', 'Windows-1252'], true);
+        if ($encoding !== 'UTF-8') {
+            $content = mb_convert_encoding($content, 'UTF-8', $encoding);
+        }
+        
+        echo json_encode([
+            'success' => true,
+            'content' => $content,
+            'encoding' => 'UTF-8'
+        ]);
+        break;
+
+    case 'write_file':
+        if (!defined('FM_ENABLE_EDITOR') || !FM_ENABLE_EDITOR) {
+            http_response_code(403);
+            echo json_encode(['success' => false, 'error' => 'Editor disabled']);
+            exit;
+        }
+        
+        $path = $_POST['path'] ?? '';
+        $content = $_POST['content'] ?? '';
+        $path = trim($path, '/\\');
+        
+        if (!FileManagerHelper::isPathSafe($path)) {
+            http_response_code(403);
+            echo json_encode(['success' => false, 'error' => Language::get('msg_access_denied')]);
+            exit;
+        }
+        
+        $fullPath = $path !== '' ? $basePath . '/' . $path : $basePath;
+        $fullPathReal = realpath($fullPath);
+        
+        if ($fullPathReal === false) {
+            http_response_code(404);
+            echo json_encode(['success' => false, 'error' => Language::get('msg_not_found')]);
+            exit;
+        }
+        
+        if ($fullPathReal !== false && !FileManagerHelper::isPathWithinBase($fullPathReal, $basePathReal)) {
+            http_response_code(403);
+            echo json_encode(['success' => false, 'error' => Language::get('msg_access_denied')]);
+            exit;
+        }
+        
+        if (is_dir($fullPathReal)) {
+            http_response_code(400);
+            echo json_encode(['success' => false, 'error' => Language::get('msg_not_file')]);
+            exit;
+        }
+        
+        $extension = strtolower(pathinfo($fullPathReal, PATHINFO_EXTENSION));
+        $editableExtensions = defined('FM_EDITABLE_EXTENSIONS') ? FM_EDITABLE_EXTENSIONS : [];
+        
+        if (!in_array($extension, $editableExtensions)) {
+            http_response_code(403);
+            echo json_encode(['success' => false, 'error' => 'File type not editable']);
+            exit;
+        }
+        
+        $maxSize = defined('FM_MAX_EDIT_FILE_SIZE') ? FM_MAX_EDIT_FILE_SIZE : 5242880;
+        if ($maxSize > 0 && strlen($content) > $maxSize) {
+            http_response_code(413);
+            echo json_encode(['success' => false, 'error' => 'Content too large']);
+            exit;
+        }
+        
+        // Backup original file
+        $backupPath = $fullPathReal . '.bak';
+        @copy($fullPathReal, $backupPath);
+        
+        $result = file_put_contents($fullPathReal, $content);
+        
+        if ($result === false) {
+            // Restore from backup
+            @copy($backupPath, $fullPathReal);
+            http_response_code(500);
+            echo json_encode(['success' => false, 'error' => 'Error writing file']);
+            exit;
+        }
+        
+        // Remove backup on success
+        @unlink($backupPath);
+        
+        // Log action
+        if (defined('FM_ENABLE_LOGGING') && FM_ENABLE_LOGGING) {
+            $logFile = defined('FM_LOG_FILE') ? FM_LOG_FILE : __DIR__ . '/logs/filemanager.log';
+            $safePath = FileManagerHelper::sanitizeLog($path);
+            $safeIp = FileManagerHelper::sanitizeLog($_SERVER['REMOTE_ADDR'] ?? '');
+            $logLine = sprintf("%s | EDIT | %s | %s", date('Y-m-d H:i:s'), $safePath, $safeIp);
+            FileManagerHelper::log($logLine, $logFile);
+        }
+        
+        echo json_encode(['success' => true]);
+        break;
+
     default:
         http_response_code(400);
         echo json_encode(['success' => false, 'error' => 'Azione non riconosciuta: ' . $action]);

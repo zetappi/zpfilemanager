@@ -203,6 +203,41 @@ setcookie('fm_lang', $lang, time() + (30 * 24 * 60 * 60), '/');
         </div>
     </div>
 
+    <div class="fm-modal" id="modalEditor">
+        <div class="fm-modal-content fm-modal-lg">
+            <div class="fm-modal-header">
+                <h3 id="editorTitle"><i class="fa-solid fa-pen-to-square"></i> <?php echo Language::get('editor_title'); ?></h3>
+                <button type="button" class="fm-modal-close" data-close>
+                    <i class="fa-solid fa-xmark"></i>
+                </button>
+            </div>
+            <div class="fm-modal-body">
+                <textarea id="editorTextarea" class="fm-editor-textarea"></textarea>
+            </div>
+            <div class="fm-modal-footer">
+                <button type="button" class="fm-btn fm-btn-ghost" id="btnCancelEditor"><?php echo Language::get('btn_cancel'); ?></button>
+                <button type="button" class="fm-btn fm-btn-primary" id="btnSaveEditor"><?php echo Language::get('btn_save'); ?></button>
+            </div>
+        </div>
+    </div>
+
+    <div class="fm-modal" id="modalAlert">
+        <div class="fm-modal-content fm-modal-sm">
+            <div class="fm-modal-header">
+                <h3 id="alertTitle"><i class="fa-solid fa-circle-info"></i> Info</h3>
+                <button type="button" class="fm-modal-close" data-close>
+                    <i class="fa-solid fa-xmark"></i>
+                </button>
+            </div>
+            <div class="fm-modal-body">
+                <p id="alertMessage"></p>
+            </div>
+            <div class="fm-modal-footer">
+                <button type="button" class="fm-btn fm-btn-primary" id="btnAlertOk">OK</button>
+            </div>
+        </div>
+    </div>
+
     <script src="filemanager.js"></script>
 </body>
 </html>

@@ -21,6 +21,8 @@ return [
     'btn_rename' => 'Переименовать',
     'btn_download' => 'Скачать',
     'btn_close' => 'Закрыть',
+    'btn_save' => 'Сохранить',
+    'btn_edit' => 'Редактировать',
     
     // Modals
     'modal_new_folder_title' => 'Создать новую папку',
@@ -116,4 +118,11 @@ return [
     'directory_superiore' => 'Вверх',
     'copyright' => '© 2024 ZP Файловый менеджер',
     'copyright_email' => 'Лицензия MIT',
+    
+    // Editor
+    'editor_title' => 'Редактировать файл',
+    'editor_loading' => 'Загрузка файла...',
+    'editor_error' => 'Ошибка загрузки файла',
+    'editor_saved' => 'Файл успешно сохранён',
+    'editor_save_error' => 'Ошибка сохранения файла',
 ];

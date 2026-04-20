@@ -21,6 +21,8 @@ return [
     'btn_rename' => 'Rinomina',
     'btn_download' => 'Scarica',
     'btn_close' => 'Chiudi',
+    'btn_save' => 'Salva',
+    'btn_edit' => 'Modifica',
     
     // Modals
     'modal_new_folder_title' => 'Crea Nuova Cartella',
@@ -113,7 +115,14 @@ return [
     'shortcut_escape' => 'Esc per annullare',
     
     // Additional
-    'directory_superiore' => 'Vai su',
-    'copyright' => '© 2024 ZP File Manager',
+    'directory_superiore' => 'Sali',
+    'copyright' => ' 2024 ZP File Manager',
     'copyright_email' => 'Licenza MIT',
+    
+    // Editor
+    'editor_title' => 'Modifica File',
+    'editor_loading' => 'Caricamento file...',
+    'editor_error' => 'Errore caricamento file',
+    'editor_saved' => 'File salvato con successo',
+    'editor_save_error' => 'Errore salvataggio file',
 ];

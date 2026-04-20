@@ -21,6 +21,8 @@ return [
     'btn_rename' => 'Hernoemen',
     'btn_download' => 'Downloaden',
     'btn_close' => 'Sluiten',
+    'btn_save' => 'Opslaan',
+    'btn_edit' => 'Bewerken',
     
     // Modals
     'modal_new_folder_title' => 'Nieuwe map aanmaken',
@@ -116,4 +118,11 @@ return [
     'directory_superiore' => 'Omhoog',
     'copyright' => '© 2024 ZP Bestandsbeheer',
     'copyright_email' => 'MIT Licentie',
+    
+    // Editor
+    'editor_title' => 'Bestand bewerken',
+    'editor_loading' => 'Bestand laden...',
+    'editor_error' => 'Fout bij laden bestand',
+    'editor_saved' => 'Bestand succesvol opgeslagen',
+    'editor_save_error' => 'Fout bij opslaan bestand',
 ];

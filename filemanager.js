@@ -11,8 +11,14 @@
     const modalNewFolder = document.getElementById('modalNewFolder');
     const modalConfirm = document.getElementById('modalConfirm');
     const modalRename = document.getElementById('modalRename');
+    const modalEditor = document.getElementById('modalEditor');
+    const modalAlert = document.getElementById('modalAlert');
     const newFolderInput = document.getElementById('newFolderName');
     const renameInput = document.getElementById('renameInput');
+    const editorTextarea = document.getElementById('editorTextarea');
+    const editorTitle = document.getElementById('editorTitle');
+    const alertTitle = document.getElementById('alertTitle');
+    const alertMessage = document.getElementById('alertMessage');
     const sortBySelect = document.getElementById('sortBy');
     const sortOrderSelect = document.getElementById('sortOrder');
 
@@ -22,6 +28,7 @@
     let confirmCallback = null;
     let renameCallback = null;
     let renameOldName = '';
+    let editingPath = '';
     let currentPage = 1;
     let sortBy = 'name';
     let sortOrder = 'asc';
@@ -302,6 +309,8 @@
                     </div>
                     ${downloadLink ? `<a href="${downloadLink}" class="fm-item-download" target="_blank" title="${t('btn_download')}"><i class="fa-solid fa-download"></i></a>` : ''}
                     <div class="fm-item-actions">
+                        ${!item.is_dir && isEditable(item.name) ? `<button type="button" class="fm-item-action btn-edit" title="${t('btn_edit')}"><i class="fa-solid fa-pen-to-square"></i></button>` : ''}
+                        ${!item.is_dir && !isEditable(item.name) ? `<span class="fm-item-action fm-item-disabled" title="Not editable"><i class="fa-solid fa-ban"></i></span>` : ''}
                         <button type="button" class="fm-item-action btn-rename" title="${t('btn_rename')}"><i class="fa-solid fa-pen"></i></button>
                         <button type="button" class="fm-item-action btn-delete" title="${t('btn_delete')}"><i class="fa-solid fa-trash"></i></button>
                     </div>
@@ -355,6 +364,12 @@
         const div = document.createElement('div');
         div.textContent = text;
         return div.innerHTML;
+    }
+
+    function isEditable(filename) {
+        const ext = filename.split('.').pop().toLowerCase();
+        const editableExtensions = ['txt', 'php', 'js', 'css', 'html', 'htm', 'md', 'json', 'xml', 'yml', 'yaml', 'ini', 'htaccess', 'conf', 'log'];
+        return editableExtensions.includes(ext);
     }
 
     function attachItemListeners() {
@@ -413,6 +428,11 @@
             item.querySelector('.btn-rename')?.addEventListener('click', (e) => {
                 e.stopPropagation();
                 renameItem(path, item.querySelector('.fm-item-name').textContent, isDir);
+            });
+            
+            item.querySelector('.btn-edit')?.addEventListener('click', (e) => {
+                e.stopPropagation();
+                openEditor(path);
             });
         });
     }
@@ -560,6 +580,12 @@
         showModal(modalConfirm);
     }
 
+    function showAlert(title, message) {
+        alertTitle.innerHTML = title;
+        alertMessage.textContent = message;
+        showModal(modalAlert);
+    }
+
     function showRenameModal(oldName, callback) {
         renameOldName = oldName;
         renameInput.value = oldName;
@@ -590,6 +616,67 @@
                 alert(t('error_network'));
             }
         });
+    }
+
+    async function openEditor(path) {
+        editingPath = path;
+        editorTitle.innerHTML = '<i class="fa-solid fa-pen-to-square"></i> ' + t('editor_title') + ' - ' + escapeHtml(path);
+        editorTextarea.value = t('editor_loading');
+        showModal(modalEditor);
+        
+        try {
+            const response = await ajax(getBaseUrl(), { action: 'read_file', path: path, base_path: rootPath });
+            if (response.success) {
+                editorTextarea.value = response.content;
+            } else {
+                closeModal(modalEditor);
+                showConfirm(
+                    '<i class="fa-solid fa-circle-exclamation"></i> ' + t('error_generic'),
+                    t('editor_error') + ': ' + (response.error || 'Unknown error'),
+                    () => {}
+                );
+            }
+        } catch (e) {
+            closeModal(modalEditor);
+            showConfirm(
+                '<i class="fa-solid fa-circle-exclamation"></i> ' + t('error_network'),
+                t('editor_error') + ': ' + t('error_network'),
+                () => {}
+            );
+        }
+    }
+
+    async function saveEditor() {
+        const content = editorTextarea.value;
+        try {
+            const formData = new FormData();
+            formData.append('action', 'write_file');
+            formData.append('path', editingPath);
+            formData.append('content', content);
+            formData.append('base_path', rootPath);
+            
+            const response = await ajax(getBaseUrl(), formData, 'POST');
+            if (response.success) {
+                closeModal(modalEditor);
+                loadDirectory(currentPath);
+                showAlert(
+                    '<i class="fa-solid fa-check-circle"></i> ' + t('success_operation'),
+                    t('editor_saved')
+                );
+            } else {
+                showConfirm(
+                    '<i class="fa-solid fa-circle-exclamation"></i> ' + t('error_generic'),
+                    t('editor_save_error') + ': ' + (response.error || 'Unknown error'),
+                    () => {}
+                );
+            }
+        } catch (e) {
+            showConfirm(
+                '<i class="fa-solid fa-circle-exclamation"></i> ' + t('error_network'),
+                t('editor_save_error') + ': ' + t('error_network'),
+                () => {}
+            );
+        }
     }
 
     document.getElementById('btnNewFolder').addEventListener('click', () => {
@@ -633,6 +720,16 @@
                 renameCallback(newName);
             }
         }
+    });
+
+    document.getElementById('btnCancelEditor').addEventListener('click', () => {
+        closeModal(modalEditor);
+    });
+
+    document.getElementById('btnSaveEditor').addEventListener('click', saveEditor);
+
+    document.getElementById('btnAlertOk').addEventListener('click', () => {
+        closeModal(modalAlert);
     });
 
     document.getElementById('btnBack').addEventListener('click', () => {

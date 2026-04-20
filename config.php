@@ -60,6 +60,8 @@ define('FM_ALLOWED_EXTENSIONS', [
     'pdf', 'doc', 'docx', 'xls', 'xlsx', 'ppt', 'pptx', 'odt', 'ods', 'odp',
     // Text
     'txt', 'rtf', 'csv', 'md',
+    // Web/Code
+    'html', 'htm', 'php', 'js', 'css', 'json', 'xml', 'yml', 'yaml',
     // Archives
     'zip', 'rar', '7z', 'tar', 'gz'
 ]);
@@ -111,6 +113,22 @@ define('FM_ITEMS_PER_PAGE', 10);
 // Maximum items per page
 // Default: 100
 define('FM_MAX_ITEMS_PER_PAGE', 100);
+
+// ============================================================================
+// EDITOR CONFIGURATION
+// ============================================================================
+
+// Enable file editor
+// Default: true
+define('FM_ENABLE_EDITOR', true);
+
+// Editable file extensions
+// Default: ['txt', 'php', 'js', 'css', 'html', 'htm', 'md', 'json', 'xml', 'yml', 'yaml', 'ini', 'htaccess', 'conf', 'log']
+define('FM_EDITABLE_EXTENSIONS', ['txt', 'php', 'js', 'css', 'html', 'htm', 'md', 'json', 'xml', 'yml', 'yaml', 'ini', 'htaccess', 'conf', 'log']);
+
+// Maximum file size for editing (in bytes, 0 = no limit)
+// Default: 5MB
+define('FM_MAX_EDIT_FILE_SIZE', 5242880);
 
 // Enable file size caching (improves performance on large directories)
 // Default: false

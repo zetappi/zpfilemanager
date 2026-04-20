@@ -21,6 +21,8 @@ return [
     'btn_rename' => 'Renommer',
     'btn_download' => 'Télécharger',
     'btn_close' => 'Fermer',
+    'btn_save' => 'Enregistrer',
+    'btn_edit' => 'Modifier',
     
     // Modals
     'modal_new_folder_title' => 'Créer un nouveau dossier',
@@ -116,4 +118,11 @@ return [
     'directory_superiore' => 'Remonter',
     'copyright' => '© 2024 ZP File Manager',
     'copyright_email' => 'Licence MIT',
+    
+    // Editor
+    'editor_title' => 'Modifier le fichier',
+    'editor_loading' => 'Chargement du fichier...',
+    'editor_error' => 'Erreur lors du chargement du fichier',
+    'editor_saved' => 'Fichier enregistré avec succès',
+    'editor_save_error' => 'Erreur lors de l\'enregistrement du fichier',
 ];

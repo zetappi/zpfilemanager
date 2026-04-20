@@ -589,7 +589,7 @@ body[data-theme="light"] {
 .fm-item-actions {
     display: flex;
     gap: 6px;
-    opacity: 0;
+    opacity: 0.3;
     transition: var(--fm-transition);
 }
 
@@ -637,6 +637,18 @@ body[data-theme="light"] {
 .fm-item-action.btn-delete:hover {
     color: var(--fm-danger);
     background: rgba(244, 33, 46, 0.15);
+}
+
+.fm-item-disabled {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 32px;
+    height: 32px;
+    color: var(--fm-text-muted);
+    opacity: 0.2;
+    pointer-events: none;
+    cursor: not-allowed;
 }
 
 .fm-pagination {
@@ -758,8 +770,32 @@ body[data-theme="light"] {
     animation: modalIn 0.25s ease;
 }
 
+.fm-modal-lg {
+    max-width: 900px;
+}
+
 .fm-modal-sm {
     max-width: 380px;
+}
+
+.fm-editor-textarea {
+    width: 100%;
+    min-height: 400px;
+    padding: 12px;
+    font-family: 'SF Mono', Monaco, monospace;
+    font-size: 0.875rem;
+    line-height: 1.5;
+    border: 1px solid var(--fm-border);
+    border-radius: 6px;
+    background: var(--fm-bg-secondary);
+    color: var(--fm-text);
+    resize: vertical;
+}
+
+.fm-editor-textarea:focus {
+    outline: none;
+    border-color: var(--fm-primary);
+    box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
 }
 
 @keyframes modalIn {
