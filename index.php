@@ -188,7 +188,7 @@ setcookie('fm_lang', $lang, time() + (30 * 24 * 60 * 60), '/');
     <div class="fm-modal" id="modalConfirm">
         <div class="fm-modal-content fm-modal-sm">
             <div class="fm-modal-header">
-                <h3 id="confirmTitle"><i class="fa-solid fa-circle-question"></i> Conferma</h3>
+                <h3 id="confirmTitle"><i class="fa-solid fa-circle-question"></i> <?php echo Language::get('modal_confirm_title'); ?></h3>
                 <button type="button" class="fm-modal-close" data-close>
                     <i class="fa-solid fa-xmark"></i>
                 </button>
@@ -197,8 +197,8 @@ setcookie('fm_lang', $lang, time() + (30 * 24 * 60 * 60), '/');
                 <p id="confirmMessage"></p>
             </div>
             <div class="fm-modal-footer">
-                <button type="button" class="fm-btn fm-btn-ghost" id="btnConfirmCancel">Annulla</button>
-                <button type="button" class="fm-btn fm-btn-danger" id="btnConfirmOk">Conferma</button>
+                <button type="button" class="fm-btn fm-btn-ghost" id="btnConfirmCancel"><?php echo Language::get('btn_cancel'); ?></button>
+                <button type="button" class="fm-btn fm-btn-danger" id="btnConfirmOk"><?php echo Language::get('btn_confirm'); ?></button>
             </div>
         </div>
     </div>

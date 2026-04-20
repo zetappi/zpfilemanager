@@ -64,7 +64,32 @@ class FileManagerHelper {
      * @return bool True if safe
      */
     public static function isPathSafe($path) {
-        return strpos($path, '..') === false;
+        if ($path === null || $path === '') {
+            return true;
+        }
+        
+        // Check for directory traversal patterns
+        if (strpos($path, '..') !== false) {
+            return false;
+        }
+        
+        // Check for null bytes
+        if (strpos($path, "\0") !== false) {
+            return false;
+        }
+        
+        // Check for absolute paths
+        if (substr($path, 0, 1) === '/' || substr($path, 1, 1) === ':') {
+            return false;
+        }
+        
+        // Normalize path and check again for encoded traversal
+        $normalized = str_replace(['%2e%2e', '%2E%2E', '%252e%252e'], '..', strtolower($path));
+        if (strpos($normalized, '..') !== false) {
+            return false;
+        }
+        
+        return true;
     }
     
     /**
@@ -82,10 +107,21 @@ class FileManagerHelper {
             return false;
         }
         
-        $targetStr = str_replace('\\', '/', $targetReal);
-        $baseStr = str_replace('\\', '/', $baseReal);
+        // Normalize paths for comparison (handle both forward and backslashes)
+        $targetStr = rtrim(str_replace('\\', '/', $targetReal), '/');
+        $baseStr = rtrim(str_replace('\\', '/', $baseReal), '/');
         
-        return strpos($targetStr, $baseStr) === 0;
+        // Ensure exact match or target is a subdirectory of base
+        if ($targetStr === $baseStr) {
+            return true;
+        }
+        
+        // Check if target starts with base path followed by a separator
+        if (strpos($targetStr, $baseStr . '/') === 0) {
+            return true;
+        }
+        
+        return false;
     }
     
     /**

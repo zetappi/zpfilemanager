@@ -373,6 +373,14 @@
     }
 
     function attachItemListeners() {
+        // Remove old event listeners by cloning the file list
+        const oldItems = fileList.querySelectorAll('.fm-item');
+        oldItems.forEach(item => {
+            const clone = item.cloneNode(true);
+            item.parentNode.replaceChild(clone, item);
+        });
+
+        // Attach new listeners to fresh elements
         document.querySelectorAll('.fm-item').forEach(item => {
             const path = item.dataset.path;
             const isDir = item.dataset.isDir === 'true';

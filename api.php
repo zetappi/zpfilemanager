@@ -37,6 +37,25 @@ $rateLimitFile = __DIR__ . '/logs/ratelimit_' . md5($ip) . '.json';
 $currentTime = time();
 $rateLimitData = [];
 
+// Cleanup old rate limit files (run occasionally)
+if (rand(1, 100) === 1) { // 1% chance to run cleanup
+    $rateLimitDir = __DIR__ . '/logs';
+    if (is_dir($rateLimitDir)) {
+        $files = @scandir($rateLimitDir);
+        if ($files !== false) {
+            foreach ($files as $file) {
+                if (strpos($file, 'ratelimit_') === 0 && pathinfo($file, PATHINFO_EXTENSION) === 'json') {
+                    $filePath = $rateLimitDir . '/' . $file;
+                    $fileTime = @filemtime($filePath);
+                    if ($fileTime !== false && ($currentTime - $fileTime > $rateLimitWindow * 10)) {
+                        @unlink($filePath);
+                    }
+                }
+            }
+        }
+    }
+}
+
 if (file_exists($rateLimitFile)) {
     $rateLimitData = json_decode(@file_get_contents($rateLimitFile), true) ?: [];
 }
@@ -162,8 +181,8 @@ switch ($action) {
         $listPath = $fullPathReal ?: $fullPath;
         $sortBy = isset($_GET['sort_by']) ? $_GET['sort_by'] : 'name';
         $sortOrder = isset($_GET['sort_order']) ? strtolower($_GET['sort_order']) : 'asc';
-        $page = isset($_GET['page']) ? max(1, intval($_GET['page'])) : 1;
-        $perPage = isset($_GET['per_page']) ? max(1, intval($_GET['per_page'])) : (defined('FM_ITEMS_PER_PAGE') ? FM_ITEMS_PER_PAGE : 10);
+        $page = isset($_GET['page']) && is_numeric($_GET['page']) ? max(1, intval($_GET['page'])) : 1;
+        $perPage = isset($_GET['per_page']) && is_numeric($_GET['per_page']) ? max(1, intval($_GET['per_page'])) : (defined('FM_ITEMS_PER_PAGE') ? FM_ITEMS_PER_PAGE : 10);
         $maxPerPage = defined('FM_MAX_ITEMS_PER_PAGE') ? FM_MAX_ITEMS_PER_PAGE : 100;
         $perPage = min($perPage, $maxPerPage);
         
@@ -273,6 +292,8 @@ switch ($action) {
         break;
 
     case 'delete':
+        $path = isset($_POST['path']) ? trim($_POST['path'], '/\\') : '';
+        
             // Log action
             if (defined('FM_ENABLE_LOGGING') && FM_ENABLE_LOGGING) {
                 $logFile = defined('FM_LOG_FILE') ? FM_LOG_FILE : __DIR__ . '/logs/filemanager.log';
@@ -281,7 +302,6 @@ switch ($action) {
                 $logLine = sprintf("%s | DELETE | %s | %s", date('Y-m-d H:i:s'), $safePath, $safeIp);
                 FileManagerHelper::log($logLine, $logFile);
             }
-        $path = isset($_POST['path']) ? trim($_POST['path'], '/\\') : '';
         
         if (empty($path)) {
             echo json_encode(['success' => false, 'error' => Language::get('msg_path_required')]);
@@ -318,6 +338,9 @@ switch ($action) {
         break;
 
     case 'rename':
+        $path = isset($_POST['path']) ? trim($_POST['path'], '/\\') : '';
+        $newName = isset($_POST['new_name']) ? trim($_POST['new_name']) : '';
+        
             // Log action
             if (defined('FM_ENABLE_LOGGING') && FM_ENABLE_LOGGING) {
                 $logFile = defined('FM_LOG_FILE') ? FM_LOG_FILE : __DIR__ . '/logs/filemanager.log';
@@ -327,8 +350,6 @@ switch ($action) {
                 $logLine = sprintf("%s | RENAME | %s -> %s | %s", date('Y-m-d H:i:s'), $safePath, $safeNewName, $safeIp);
                 FileManagerHelper::log($logLine, $logFile);
             }
-        $path = isset($_POST['path']) ? trim($_POST['path'], '/\\') : '';
-        $newName = isset($_POST['new_name']) ? trim($_POST['new_name']) : '';
         
         if (empty($path) || empty($newName)) {
             echo json_encode(['success' => false, 'error' => 'Path e nuovo nome richiesti']);
@@ -456,6 +477,19 @@ switch ($action) {
         break;
 
     case 'download':
+        // CSRF Protection: validate token for download requests
+        $enableCsrf = defined('FM_ENABLE_CSRF') ? FM_ENABLE_CSRF : true;
+        if ($enableCsrf) {
+            $providedToken = $_GET['csrf_token'] ?? $_SERVER['HTTP_X_CSRF_TOKEN'] ?? '';
+            if (!isset($_SESSION['csrf_token']) || !hash_equals($_SESSION['csrf_token'], $providedToken)) {
+                http_response_code(403);
+                echo json_encode(['success' => false, 'error' => 'CSRF token validation failed']);
+                exit;
+            }
+        }
+        
+        $path = isset($_GET['path']) ? trim($_GET['path'], '/\\') : '';
+        
             // Log download action
             if (defined('FM_ENABLE_LOGGING') && FM_ENABLE_LOGGING) {
                 $logFile = defined('FM_LOG_FILE') ? FM_LOG_FILE : __DIR__ . '/logs/filemanager.log';
@@ -464,11 +498,10 @@ switch ($action) {
                 $logLine = sprintf("%s | DOWNLOAD | %s | %s", date('Y-m-d H:i:s'), $safePath, $safeIp);
                 FileManagerHelper::log($logLine, $logFile);
             }
-        $path = isset($_GET['path']) ? trim($_GET['path'], '/\\') : '';
         
         if (empty($path)) {
             http_response_code(400);
-            echo Language::get('msg_path_required');
+            echo json_encode(['success' => false, 'error' => Language::get('msg_path_required')]);
             exit;
         }
         
@@ -477,7 +510,7 @@ switch ($action) {
         
         if ($targetReal === false) {
             http_response_code(404);
-            echo Language::get('msg_not_found');
+            echo json_encode(['success' => false, 'error' => Language::get('msg_not_found')]);
             exit;
         }
         
@@ -486,13 +519,13 @@ switch ($action) {
         
         if (strpos($targetStr, $base) !== 0) {
             http_response_code(403);
-            echo Language::get('msg_access_denied');
+            echo json_encode(['success' => false, 'error' => Language::get('msg_access_denied')]);
             exit;
         }
         
         if (is_dir($targetReal)) {
             http_response_code(400);
-            echo Language::get('msg_not_file');
+            echo json_encode(['success' => false, 'error' => Language::get('msg_not_file')]);
             exit;
         }
         
@@ -534,7 +567,14 @@ switch ($action) {
             exit;
         }
         
-        if ($fullPathReal !== false && !FileManagerHelper::isPathWithinBase($fullPathReal, $basePathReal)) {
+        // Ensure basePathReal is defined
+        if ($basePathReal === false) {
+            http_response_code(500);
+            echo json_encode(['success' => false, 'error' => Language::get('msg_folder_error')]);
+            exit;
+        }
+        
+        if (!FileManagerHelper::isPathWithinBase($fullPathReal, $basePathReal)) {
             http_response_code(403);
             echo json_encode(['success' => false, 'error' => Language::get('msg_access_denied')]);
             exit;
@@ -562,12 +602,34 @@ switch ($action) {
             exit;
         }
         
-        $content = file_get_contents($fullPathReal);
-        if ($content === false) {
+        // Read file with memory limit protection
+        $content = '';
+        $handle = @fopen($fullPathReal, 'rb');
+        if ($handle === false) {
             http_response_code(500);
             echo json_encode(['success' => false, 'error' => 'Error reading file']);
             exit;
         }
+        
+        while (!feof($handle)) {
+            $chunk = fread($handle, 8192);
+            if ($chunk === false) {
+                fclose($handle);
+                http_response_code(500);
+                echo json_encode(['success' => false, 'error' => 'Error reading file']);
+                exit;
+            }
+            $content .= $chunk;
+            
+            // Additional safety check for memory
+            if (strlen($content) > $maxSize) {
+                fclose($handle);
+                http_response_code(413);
+                echo json_encode(['success' => false, 'error' => 'File too large to edit']);
+                exit;
+            }
+        }
+        fclose($handle);
         
         // Convert to UTF-8 if needed
         $encoding = mb_detect_encoding($content, ['UTF-8', 'ISO-8859-1', 'Windows-1252'], true);
@@ -608,7 +670,14 @@ switch ($action) {
             exit;
         }
         
-        if ($fullPathReal !== false && !FileManagerHelper::isPathWithinBase($fullPathReal, $basePathReal)) {
+        // Ensure basePathReal is defined
+        if ($basePathReal === false) {
+            http_response_code(500);
+            echo json_encode(['success' => false, 'error' => Language::get('msg_folder_error')]);
+            exit;
+        }
+        
+        if (!FileManagerHelper::isPathWithinBase($fullPathReal, $basePathReal)) {
             http_response_code(403);
             echo json_encode(['success' => false, 'error' => Language::get('msg_access_denied')]);
             exit;

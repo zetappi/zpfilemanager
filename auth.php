@@ -12,7 +12,13 @@ if (!defined('FM_REQUIRE_AUTH')) {
 if (session_status() === PHP_SESSION_NONE) {
     // Secure session configuration
     ini_set('session.cookie_httponly', 1);
-    ini_set('session.cookie_secure', isset($_SERVER['HTTPS']));
+    
+    // Check for HTTPS, considering proxy headers
+    $isHttps = isset($_SERVER['HTTPS']) && $_SERVER['HTTPS'] === 'on';
+    $isHttps = $isHttps || (isset($_SERVER['HTTP_X_FORWARDED_PROTO']) && strtolower($_SERVER['HTTP_X_FORWARDED_PROTO']) === 'https');
+    $isHttps = $isHttps || (isset($_SERVER['HTTP_X_FORWARDED_SSL']) && $_SERVER['HTTP_X_FORWARDED_SSL'] === 'on');
+    
+    ini_set('session.cookie_secure', $isHttps);
     ini_set('session.use_strict_mode', 1);
     session_start();
 }
